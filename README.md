@@ -48,21 +48,24 @@ cp .env.local.example .env.local
 
 ### 3. Supabase
 
+> 📘 **Hướng dẫn chi tiết** (schema, RLS, Auth, Google OAuth, Turnstile, ingest, kiểm thử,
+> xử lý sự cố): xem **[`docs/SUPABASE.md`](docs/SUPABASE.md)**. Phần dưới chỉ là tóm tắt.
+
 **Option A — Supabase Cloud:**
 
 ```bash
 npm i -g supabase
 supabase link --project-ref <project-ref>
-supabase db push                 # nạp migrations/0001_init.sql
+supabase db push                                   # nạp migrations/0001_init.sql
 supabase secrets set IP_HASH_SALT=$(openssl rand -hex 32)
-supabase functions deploy get-chapter
+supabase functions deploy get-chapter --no-verify-jwt   # hàm tự verify JWT trong code
 ```
 
 **Option B — Local (Docker):**
 
 ```bash
 supabase start                   # tự nạp migrations + seed.sql
-supabase functions serve get-chapter --env-file .env.local
+supabase functions serve get-chapter --env-file .env.local --no-verify-jwt
 ```
 
 Bật **Google OAuth** ở Supabase Dashboard → Authentication → Providers (hoặc trong `config.toml`).
