@@ -1,0 +1,50 @@
+/* ------------------------------------------------------------------
+   Theming + reader typography — điều khiển hoàn toàn bằng CSS variables.
+   3 theme (paper / sepia / night) đặt trên [data-theme] ở <html>.
+   ------------------------------------------------------------------ */
+
+:root {
+  /* Fonts (map vào tailwind.config.js) */
+  --font-serif: 'Noto Serif', 'Lora', Georgia, serif;
+  --font-sans: 'Be Vietnam Pro', system-ui, sans-serif;
+  /* Font vùng đọc — JS ghi đè khi người dùng đổi (serif ↔ sans) */
+  --reader-font: var(--font-serif);
+
+  /* Reader typography — mức mặc định (cỡ 3/5) */
+  --reader-measure: 68ch;
+  --reader-size: 19px; /* JS ghi đè theo mức người dùng chọn */
+  --reader-leading: 1.8; /* Tiếng Việt cần thoáng: dấu chồng tầng */
+  --reader-para-gap: 1.1em;
+  --reader-indent: 0; /* dùng khoảng cách đoạn, không thụt đầu dòng */
+}
+
+/* ---- Paper (mặc định) ---- */
+[data-theme='paper'] {
+  --bg: #faf9f7;
+  --text: #1f1d1a;
+  --muted: #6b6660;
+  --surface: #ffffff;
+  --border: #e7e3dd;
+  --accent: #8a5a2b;
+}
+
+/* ---- Sepia ---- */
+[data-theme='sepia'] {
+  --bg: #f4ecd8;
+  --text: #5b4636;
+  --muted: #8a7358;
+  --surface: #efe6cf;
+  --border: #e0d4b8;
+  --accent: #91572a;
+}
+
+/* ---- Night ----
+   Text = #C9C7C2 (không #FFF): trắng tinh trên nền đen gây quầng mắt. */
+[data-theme='night'] {
+  --bg: #16181a;
+  --text: #c9c7c2;
+  --muted: #7c7a76;
+  --surface: #202325;
+  --border: #2c2f31;
+  --accent: #c79a6a;
+}

@@ -1,0 +1,41 @@
+# Cấu hình Supabase CLI. `project_id` là tên thư mục dự án.
+# Sau khi tạo project trên supabase.com, chạy:
+#   supabase link --project-ref <project-ref>
+
+project_id = "novel-reader"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db]
+port = 54322
+shadow_port = 54320
+major_version = 15
+
+[studio]
+enabled = true
+port = 54323
+
+[auth]
+enabled = true
+site_url = "http://localhost:5173"
+additional_redirect_urls = ["http://localhost:5173"]
+jwt_expiry = 3600
+enable_signup = true
+
+[auth.email]
+enable_signup = true
+enable_confirmations = true
+
+# Bật Google OAuth: điền client id/secret hoặc set trên dashboard.
+[auth.external.google]
+enabled = false
+# client_id = ""
+# secret = ""
+
+[functions.get-chapter]
+verify_jwt = false  # tự verify trong code để cho phép cả anon đọc chương free

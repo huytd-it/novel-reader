@@ -1,0 +1,99 @@
+@import './styles/themes.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+
+  body {
+    margin: 0;
+    background-color: var(--bg);
+    color: var(--text);
+    font-family: var(--font-sans);
+    /* Đổi theme mượt, nhưng tôn trọng reduced-motion (xử lý bên dưới) */
+    transition:
+      background-color 200ms ease,
+      color 200ms ease;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Focus ring nhất quán, thân thiện accessibility */
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
+}
+
+@layer components {
+  /* ---- Vùng đọc: khối text long-form ---- */
+  .reader-prose {
+    max-width: var(--reader-measure);
+    margin-inline: auto;
+    font-family: var(--reader-font);
+    font-size: var(--reader-size);
+    line-height: var(--reader-leading);
+    color: var(--text);
+  }
+
+  .reader-prose p {
+    margin: 0 0 var(--reader-para-gap);
+    text-indent: var(--reader-indent);
+    /* Chương dài: chỉ render đoạn trong/cận viewport */
+    content-visibility: auto;
+    contain-intrinsic-size: auto 3em;
+    /* Ngắt từ tiếng Việt gọn gàng */
+    overflow-wrap: break-word;
+    hyphens: none;
+  }
+
+  .reader-prose p:last-child {
+    margin-bottom: 0;
+  }
+}
+
+/* ---- Motion tối thiểu: tôn trọng prefers-reduced-motion ---- */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Fade nhẹ khi đổi chương (150ms) */
+.chapter-fade-enter {
+  opacity: 0;
+}
+.chapter-fade-enter-active {
+  opacity: 1;
+  transition: opacity 150ms ease;
+}
+
+/* Settings sheet: slide-up trên mobile (đã tôn trọng reduced-motion ở trên) */
+@keyframes sheet-slide-up {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+.sheet-panel {
+  animation: sheet-slide-up 200ms ease-out;
+}
+@media (min-width: 640px) {
+  /* Trên desktop sheet ở giữa màn hình → không slide từ đáy */
+  .sheet-panel {
+    animation: none;
+  }
+}
