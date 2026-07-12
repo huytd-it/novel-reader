@@ -1,31 +1,60 @@
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { fetchPublishedBooks } from '@/lib/api';
+import { useGenres } from '@/hooks/useGenres';
+import { stripDiacritics } from '@/lib/text';
 import { SiteHeader } from '@/components/SiteHeader';
 import { BookCard } from '@/components/BookCard';
 import { Reveal } from '@/components/ui/Reveal';
 import { Spinner } from '@/components/ui/Spinner';
+import { CloseIcon } from '@/components/ui/icons';
 
 export default function Library() {
-  const [genre, setGenre] = useState<string | null>(null);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const genre = searchParams.get('genre');
+  const q = searchParams.get('q') ?? '';
 
   const { data: books, isLoading, isError } = useQuery({
     queryKey: ['books'],
     queryFn: () => fetchPublishedBooks(),
   });
 
-  // Danh sách genre suy ra từ dữ liệu (không cần bảng riêng cho v1).
-  const genres = useMemo(() => {
-    const set = new Set<string>();
-    books?.forEach((b) => b.genre?.forEach((g) => set.add(g)));
-    return Array.from(set).sort((a, b) => a.localeCompare(b, 'vi'));
-  }, [books]);
+  const { genres } = useGenres();
+
+  function setGenre(next: string | null) {
+    setSearchParams(
+      (prev) => {
+        const params = new URLSearchParams(prev);
+        if (next) params.set('genre', next);
+        else params.delete('genre');
+        return params;
+      },
+      { replace: true },
+    );
+  }
+
+  function clearSearch() {
+    setSearchParams(
+      (prev) => {
+        const params = new URLSearchParams(prev);
+        params.delete('q');
+        return params;
+      },
+      { replace: true },
+    );
+  }
 
   const filtered = useMemo(() => {
     if (!books) return [];
-    if (!genre) return books;
-    return books.filter((b) => b.genre?.includes(genre));
-  }, [books, genre]);
+    const nq = stripDiacritics(q.trim());
+    return books.filter((b) => {
+      if (genre && !b.genre?.includes(genre)) return false;
+      if (!nq) return true;
+      const haystack = stripDiacritics(`${b.title} ${b.author ?? ''}`);
+      return haystack.includes(nq);
+    });
+  }, [books, genre, q]);
 
   return (
     <div className="min-h-dvh bg-canvas text-ink">
@@ -60,22 +89,35 @@ export default function Library() {
       </section>
 
       <main className="mx-auto max-w-5xl px-6 py-16">
-        {/* ---- Bộ lọc thể loại ---- */}
-        {genres.length > 0 && (
+        {/* ---- Bộ lọc thể loại + tìm kiếm đang áp dụng ---- */}
+        {(genres.length > 0 || q) && (
           <Reveal className="mb-10">
-            <div className="flex flex-wrap gap-2">
-              <GenreChip active={genre === null} onClick={() => setGenre(null)}>
-                Tất cả
-              </GenreChip>
-              {genres.map((g) => (
-                <GenreChip
-                  key={g}
-                  active={genre === g}
-                  onClick={() => setGenre(g)}
+            <div className="flex flex-wrap items-center gap-2">
+              {genres.length > 0 && (
+                <>
+                  <GenreChip active={genre === null} onClick={() => setGenre(null)}>
+                    Tất cả
+                  </GenreChip>
+                  {genres.map((g) => (
+                    <GenreChip
+                      key={g}
+                      active={genre === g}
+                      onClick={() => setGenre(g)}
+                    >
+                      {g}
+                    </GenreChip>
+                  ))}
+                </>
+              )}
+              {q && (
+                <button
+                  onClick={clearSearch}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-ink-strong bg-ink-strong px-3.5 py-1.5 text-xs uppercase tracking-[0.05em] text-white"
                 >
-                  {g}
-                </GenreChip>
-              ))}
+                  Tìm: “{q}”
+                  <CloseIcon width={13} height={13} />
+                </button>
+              )}
             </div>
           </Reveal>
         )}

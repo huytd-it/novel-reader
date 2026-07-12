@@ -283,6 +283,33 @@ Function upsert `books` theo slug, thay toàn bộ `chapters` + `chapter_content
 
 ---
 
+## 4c. Quản lý truyện qua giao diện admin (`/admin/books`)
+
+Sau khi nhập, vào `/admin/books` (link **"Quản lý truyện"** trong menu tài khoản khi bạn là
+admin) để xem **toàn bộ** truyện — kể cả bản nháp (`is_published = false`) — sửa tựa/tác
+giả/mô tả/thể loại/trạng thái, publish/ẩn nhanh, hoặc xoá hẳn một truyện.
+
+Khác với `admin-import`, thao tác này **không đi qua Edge Function**: `migrations/0003_admin_books_manage.sql`
+thêm hàm `is_admin()` và 3 RLS policy trên bảng `books` (SELECT/UPDATE/DELETE) cho phép admin
+tự thao tác thẳng bằng JWT của mình — vì đây chỉ là sửa 1 hàng metadata, không đụng Storage hay
+phải thay hàng loạt `chapters`. Nạp cùng các migration khác:
+
+```bash
+supabase db push          # cloud
+# hoặc local: supabase db reset
+```
+
+Xoá một truyện sẽ **cascade xoá** `chapters` + `chapter_contents` + `reading_progress` +
+`bookmarks` liên quan (đã khai báo `on delete cascade` từ `0001`). **Giới hạn đã biết**: ảnh
+bìa trong bucket Storage `covers` **không** tự xoá theo (SQL cascade không chạm Storage) — chấp
+nhận để lại file orphan ở v1, dọn thủ công trong Storage Dashboard nếu cần.
+
+> Trường `genre` (mảng text tự do) trước đây không có đường ghi nào — cả CLI ingest lẫn
+> `admin-import` đều không set. Giờ sửa được qua `/admin/books/<id>` (ô nhập, phân tách bằng
+> dấu phẩy).
+
+---
+
 ## 5. Cấu hình Google OAuth chi tiết
 
 1. Vào <https://console.cloud.google.com> → tạo/ chọn một **Project**.

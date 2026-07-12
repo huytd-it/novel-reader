@@ -10,6 +10,8 @@ import NotFound from './routes/NotFound';
 // Route admin kéo theo parser EPUB (jszip + fast-xml-parser) → lazy-load để
 // không phình bundle chính của người đọc.
 const AdminImport = lazy(() => import('./routes/AdminImport'));
+const AdminBooks = lazy(() => import('./routes/AdminBooks'));
+const AdminBookEdit = lazy(() => import('./routes/AdminBookEdit'));
 
 /** Đồng bộ reader settings → DOM (data-theme, CSS vars) ở cấp app. */
 function SettingsApplier() {
@@ -38,6 +40,22 @@ export default function App() {
           element={
             <Suspense fallback={null}>
               <AdminImport />
+            </Suspense>
+          }
+        />
+        <Route
+          path="/admin/books"
+          element={
+            <Suspense fallback={null}>
+              <AdminBooks />
+            </Suspense>
+          }
+        />
+        <Route
+          path="/admin/books/:id"
+          element={
+            <Suspense fallback={null}>
+              <AdminBookEdit />
             </Suspense>
           }
         />

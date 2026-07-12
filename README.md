@@ -17,15 +17,22 @@ Nội dung được bảo vệ ở mức chặn bot phổ thông nhưng vẫn ch
 ```
 src/
   routes/        Library · BookDetail · Reader · Auth · NotFound
+                 AdminImport · AdminBooks · AdminBookEdit (lazy-loaded)
   components/
     reader/      ReaderPane · ReaderToolbar · SettingsSheet · ChapterNav
-    ui/          primitives (Button, IconButton, Spinner, icons)
-  lib/           supabase · api · progress · auth · types
+    nav/         GenreMenu · SearchBox · AccountMenu · NavPopover (SiteHeader)
+    admin/       AdminGate (auth + role guard dùng chung cho /admin/*)
+    ui/          primitives (Button, IconButton, Spinner, icons, ConfirmDialog)
+  lib/           supabase · api · adminBooks · progress · auth · types · text
+  hooks/         useGenres · useReaderChrome · useScrollProgress
   stores/        readerSettings (zustand + localStorage)
   styles/        themes.css (3 theme + reader typography)
 supabase/
   migrations/    0001_init.sql  (schema + RLS)
+                 0002_admin_role.sql (profiles.role)
+                 0003_admin_books_manage.sql (RLS quản lý sách cho admin)
   functions/     get-chapter/   (Edge Function lấy chương gated)
+                 admin-import/  (Edge Function nhập EPUB, service role)
   seed.sql       dữ liệu mẫu
 scripts/
   ingest-epub.ts EPUB → chapters
