@@ -228,9 +228,58 @@ npm run ingest -- ./scripts/epub/ten-truyen.epub --slug ten-truyen --free 5 --pu
 | `--title` / `--author` | Ghi đè metadata lấy từ EPUB. |
 
 Script sẽ: upsert `books` theo slug → tách chương theo TOC → insert `chapters` + `chapter_contents`
-→ cập nhật `chapter_count`.
+→ cập nhật `chapter_count` → trích + upload ảnh bìa vào bucket `covers`.
 
 > Muốn mở truyện đã nạp ở dạng nháp: chạy lại kèm `--publish`, hoặc `update books set is_published = true where slug = '...'`.
+
+---
+
+## 4b. Nhập truyện qua giao diện admin (`/admin/import`)
+
+Ngoài CLI, có thể nhập truyện ngay trên web: chọn file `.epub`, **xem trước 10 chương đầu**
++ ảnh bìa, rồi mới ghi vào DB. File được phân tích **trong trình duyệt** (dùng chung
+`src/lib/epub.ts` với CLI); việc ghi DB đi qua Edge Function `admin-import` (service role),
+nên anon key không bao giờ chạm được quyền ghi.
+
+### 4b.1 Nạp migration vai trò admin
+
+`migrations/0002_admin_role.sql` thêm cột `profiles.role` (`user` | `admin`) và **thu hồi quyền
+UPDATE** để user không tự nâng quyền. Nạp cùng các migration khác:
+
+```bash
+supabase db push          # cloud
+# hoặc local: supabase db reset (đã tự nạp mọi migration)
+```
+
+### 4b.2 Cấp quyền admin cho một tài khoản
+
+Đăng nhập bằng tài khoản sẽ làm admin (để có dòng trong `profiles`), rồi ở **SQL Editor** chạy:
+
+```sql
+update public.profiles set role = 'admin'
+where id = (select id from auth.users where email = 'ban@example.com');
+```
+
+> Chỉ service role đặt được `role` (client đã bị thu hồi quyền UPDATE cột này).
+
+### 4b.3 Deploy Edge Function
+
+```bash
+# Tự verify JWT + check admin trong code → deploy với --no-verify-jwt.
+supabase functions deploy admin-import --no-verify-jwt
+```
+
+Local: `supabase functions serve admin-import --env-file .env.local --no-verify-jwt`.
+`SUPABASE_URL` và `SUPABASE_SERVICE_ROLE_KEY` được inject sẵn — không cần set thủ công.
+
+### 4b.4 Dùng
+
+Vào `/admin/import` (link **"Nhập truyện"** hiện trên header khi bạn là admin) → chọn `.epub` →
+kiểm tra tựa/tác giả/slug/số chương free + xem trước 10 chương → **Nhập … chương vào DB**.
+Function upsert `books` theo slug, thay toàn bộ `chapters` + `chapter_contents`, và upload ảnh bìa.
+
+> Truyện rất dài (hàng nghìn chương) nên nhập bằng CLI để tránh giới hạn kích thước request của
+> Edge Function.
 
 ---
 

@@ -40,6 +40,17 @@ export async function fetchBookBySlug(slug: string): Promise<Book | null> {
   return data;
 }
 
+/** Vai trò của user hiện tại (đọc hàng profiles của chính mình qua RLS). */
+export async function fetchMyRole(userId: string): Promise<string | null> {
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', userId)
+    .maybeSingle();
+  if (error) return null;
+  return (data?.role as string | undefined) ?? null;
+}
+
 export async function fetchChapterList(bookId: string): Promise<ChapterMeta[]> {
   const { data, error } = await supabase
     .from('chapters')

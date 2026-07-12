@@ -18,11 +18,11 @@
 
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import process from 'node:process';
-import JSZip from 'jszip';
-import { XMLParser } from 'fast-xml-parser';
 import { createClient } from '@supabase/supabase-js';
 import { config } from 'dotenv';
+import { parseEpubBuffer, countWords, type RawCover } from '../src/lib/epub';
 
 config({ path: '.env.local' });
 
@@ -93,161 +93,46 @@ function parseArgs(): Args {
 }
 
 // ------------------------------------------------------------------
-// EPUB parsing
+// EPUB parsing (logic dùng chung ở src/lib/epub.ts)
 // ------------------------------------------------------------------
-const xml = new XMLParser({
-  ignoreAttributes: false,
-  attributeNamePrefix: '@_',
-});
+const COVER_BUCKET = 'covers';
 
-interface RawChapter {
-  title: string;
-  content: string;
-}
-
-function dirname(p: string): string {
-  const i = p.lastIndexOf('/');
-  return i === -1 ? '' : p.slice(0, i);
-}
-
-function joinPath(base: string, rel: string): string {
-  if (!base) return rel;
-  const parts = (base + '/' + rel).split('/');
-  const out: string[] = [];
-  for (const part of parts) {
-    if (part === '.' || part === '') continue;
-    if (part === '..') out.pop();
-    else out.push(part);
-  }
-  return out.join('/');
-}
-
-function asArray<T>(v: T | T[] | undefined): T[] {
-  if (v === undefined) return [];
-  return Array.isArray(v) ? v : [v];
-}
-
-/** HTML → plain text: đoạn tách bằng \n\n, làm sạch tag/entity. */
-function htmlToText(html: string): string {
-  let s = html;
-  // Bỏ script/style.
-  s = s.replace(/<(script|style)[\s\S]*?<\/\1>/gi, '');
-  // Ngắt đoạn ở các thẻ block.
-  s = s.replace(/<\/(p|div|h[1-6]|li|blockquote)>/gi, '\n\n');
-  s = s.replace(/<br\s*\/?>/gi, '\n');
-  // Bỏ toàn bộ tag còn lại.
-  s = s.replace(/<[^>]+>/g, '');
-  // Decode entity phổ biến.
-  s = s
-    .replace(/&nbsp;/gi, ' ')
-    .replace(/&amp;/gi, '&')
-    .replace(/&lt;/gi, '<')
-    .replace(/&gt;/gi, '>')
-    .replace(/&quot;/gi, '"')
-    .replace(/&#39;|&apos;/gi, "'")
-    .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(Number(n)));
-  // Chuẩn hóa khoảng trắng.
-  s = s.replace(/\r\n/g, '\n').replace(/[ \t]+/g, ' ');
-  s = s.replace(/\n{3,}/g, '\n\n');
-  // Trim từng dòng + tổng thể.
-  s = s
-    .split('\n')
-    .map((line) => line.trim())
-    .join('\n')
-    .trim();
-  return s;
-}
-
-function extractTitle(html: string, fallback: string): string {
-  const h = html.match(/<h[1-3][^>]*>([\s\S]*?)<\/h[1-3]>/i);
-  if (h) {
-    const t = htmlToText(h[1]).trim();
-    if (t) return t;
-  }
-  const title = html.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
-  if (title) {
-    const t = htmlToText(title[1]).trim();
-    if (t) return t;
-  }
-  return fallback;
-}
-
-async function parseEpub(epubPath: string): Promise<{
-  metaTitle: string;
-  metaAuthor: string;
-  chapters: RawChapter[];
-}> {
+/** Đọc file .epub từ đĩa → parse. Bọc parseEpubBuffer cho tiện dùng CLI. */
+async function parseEpub(epubPath: string) {
   const buf = readFileSync(resolve(epubPath));
-  const zip = await JSZip.loadAsync(buf);
-
-  // 1. container.xml → OPF path.
-  const containerXml = await zip
-    .file('META-INF/container.xml')
-    ?.async('string');
-  if (!containerXml) throw new Error('EPUB không hợp lệ: thiếu container.xml');
-  const container = xml.parse(containerXml);
-  const opfPath: string =
-    container.container.rootfiles.rootfile['@_full-path'];
-  const opfDir = dirname(opfPath);
-
-  // 2. OPF → manifest + spine + metadata.
-  const opfXml = await zip.file(opfPath)?.async('string');
-  if (!opfXml) throw new Error('Không đọc được OPF: ' + opfPath);
-  const opf = xml.parse(opfXml);
-  const pkg = opf.package;
-
-  const metadata = pkg.metadata ?? {};
-  const metaTitle = textOf(metadata['dc:title']) || 'Không rõ tựa';
-  const metaAuthor = textOf(metadata['dc:creator']) || '';
-
-  const manifestItems = asArray(pkg.manifest.item);
-  const hrefById = new Map<string, string>();
-  const typeById = new Map<string, string>();
-  for (const item of manifestItems) {
-    hrefById.set(item['@_id'], item['@_href']);
-    typeById.set(item['@_id'], item['@_media-type'] ?? '');
-  }
-
-  const spineItems = asArray(pkg.spine.itemref);
-
-  // 3. Duyệt spine theo thứ tự → đọc từng xhtml.
-  const chapters: RawChapter[] = [];
-  let seq = 0;
-  for (const ref of spineItems) {
-    const idref = ref['@_idref'];
-    const href = hrefById.get(idref);
-    const type = typeById.get(idref);
-    if (!href) continue;
-    if (type && !/xhtml|html/.test(type)) continue;
-
-    const fullPath = joinPath(opfDir, href);
-    const doc = await zip.file(fullPath)?.async('string');
-    if (!doc) continue;
-
-    const content = htmlToText(doc);
-    // Bỏ trang bìa/mục lục rỗng.
-    if (content.length < 40) continue;
-
-    seq++;
-    const title = extractTitle(doc, `Chương ${seq}`);
-    chapters.push({ title, content });
-  }
-
-  return { metaTitle, metaAuthor, chapters };
+  return parseEpubBuffer(buf);
 }
 
-function textOf(node: unknown): string {
-  if (node == null) return '';
-  if (typeof node === 'string') return node.trim();
-  if (Array.isArray(node)) return textOf(node[0]);
-  if (typeof node === 'object' && '#text' in (node as object)) {
-    return String((node as { '#text': unknown })['#text']).trim();
+// ------------------------------------------------------------------
+// Cover upload
+// ------------------------------------------------------------------
+/** Upload ảnh bìa lên Storage bucket công khai, trả về public URL. */
+async function uploadCover(
+  slug: string,
+  cover: RawCover,
+): Promise<string | null> {
+  const { data: buckets } = await supabase.storage.listBuckets();
+  if (!buckets?.some((b) => b.name === COVER_BUCKET)) {
+    const { error } = await supabase.storage.createBucket(COVER_BUCKET, {
+      public: true,
+    });
+    if (error) {
+      console.error('Không tạo được bucket ảnh bìa:', error.message);
+      return null;
+    }
   }
-  return '';
-}
 
-function countWords(text: string): number {
-  return text.split(/\s+/).filter(Boolean).length;
+  const path = `${slug}.${cover.ext}`;
+  const { error } = await supabase.storage
+    .from(COVER_BUCKET)
+    .upload(path, cover.data, { contentType: cover.contentType, upsert: true });
+  if (error) {
+    console.error('Lỗi upload ảnh bìa:', error.message);
+    return null;
+  }
+
+  const { data } = supabase.storage.from(COVER_BUCKET).getPublicUrl(path);
+  return data.publicUrl;
 }
 
 // ------------------------------------------------------------------
@@ -257,7 +142,9 @@ async function main() {
   const args = parseArgs();
   console.log(`Đọc EPUB: ${args.epubPath}`);
 
-  const { metaTitle, metaAuthor, chapters } = await parseEpub(args.epubPath);
+  const { metaTitle, metaAuthor, chapters, cover } = await parseEpub(
+    args.epubPath,
+  );
   if (chapters.length === 0) {
     console.error('Không tách được chương nào từ EPUB.');
     process.exit(1);
@@ -269,19 +156,30 @@ async function main() {
     `→ "${title}" (${author ?? 'không rõ tác giả'}) — ${chapters.length} chương, free ≤ ${args.free}`,
   );
 
-  // Upsert book theo slug.
+  // Trích + upload ảnh bìa (nếu EPUB có).
+  let coverUrl: string | null = null;
+  if (cover) {
+    coverUrl = await uploadCover(args.slug, cover);
+    console.log(
+      coverUrl ? `→ Ảnh bìa: ${coverUrl}` : '→ Có ảnh bìa nhưng upload thất bại.',
+    );
+  } else {
+    console.log('→ Không tìm thấy ảnh bìa trong EPUB.');
+  }
+
+  // Upsert book theo slug. Chỉ ghi đè cover_url khi upload thành công.
+  const bookRow: Record<string, unknown> = {
+    slug: args.slug,
+    title,
+    author,
+    is_published: args.publish,
+    chapter_count: chapters.length,
+  };
+  if (coverUrl) bookRow.cover_url = coverUrl;
+
   const { data: book, error: bookErr } = await supabase
     .from('books')
-    .upsert(
-      {
-        slug: args.slug,
-        title,
-        author,
-        is_published: args.publish,
-        chapter_count: chapters.length,
-      },
-      { onConflict: 'slug' },
-    )
+    .upsert(bookRow, { onConflict: 'slug' })
     .select('id')
     .single();
 
@@ -343,7 +241,14 @@ async function main() {
   );
 }
 
-main().catch((err) => {
-  console.error(err);
-  process.exit(1);
-});
+// Chỉ chạy khi gọi trực tiếp (không chạy khi được import để test parseEpub).
+const invokedDirectly =
+  process.argv[1] &&
+  resolve(process.argv[1]) === resolve(fileURLToPath(import.meta.url));
+
+if (invokedDirectly) {
+  main().catch((err) => {
+    console.error(err);
+    process.exit(1);
+  });
+}

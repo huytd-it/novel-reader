@@ -39,3 +39,6 @@ enabled = false
 
 [functions.get-chapter]
 verify_jwt = false  # tự verify trong code để cho phép cả anon đọc chương free
+
+[functions.admin-import]
+verify_jwt = false  # tự verify JWT + check admin trong code (trả JSON lỗi rõ ràng)
