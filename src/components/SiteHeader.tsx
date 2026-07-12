@@ -7,24 +7,27 @@ export function SiteHeader() {
   const { user, signOut } = useAuth();
 
   return (
-    <header className="sticky top-0 z-20 border-b border-border bg-bg">
-      <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-5">
-        <Link to="/" className="font-sans text-base font-semibold tracking-tight">
+    <header className="sticky top-0 z-20 border-b border-hairline bg-canvas/80 backdrop-blur-md">
+      <div className="mx-auto flex h-16 max-w-5xl items-center justify-between px-6">
+        <Link
+          to="/"
+          className="font-display text-lg font-medium tracking-[-0.02em] text-ink-strong"
+        >
           Đọc Truyện
         </Link>
-        <nav className="flex items-center gap-2">
+        <nav className="flex items-center gap-3">
           {user ? (
             <>
-              <span className="hidden text-sm text-muted sm:inline">
+              <span className="hidden font-mono text-xs text-ink-muted sm:inline">
                 {user.email}
               </span>
-              <Button variant="ghost" onClick={() => void signOut()}>
+              <Button variant="hairline" onClick={() => void signOut()}>
                 Đăng xuất
               </Button>
             </>
           ) : (
             <Link to="/dang-nhap">
-              <Button variant="outline">Đăng nhập</Button>
+              <Button variant="solid">Đăng nhập</Button>
             </Link>
           )}
         </nav>
