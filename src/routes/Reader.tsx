@@ -4,8 +4,11 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { fetchChapter, fetchBookBySlug, fetchChapterList, ApiError } from '@/lib/api';
 import { fetchProgress, saveProgressDebounced, flushProgressBeacon } from '@/lib/progress';
 import { useAuth } from '@/lib/auth';
+import { useReaderChrome } from '@/hooks/useReaderChrome';
 import { ReaderPane } from '@/components/reader/ReaderPane';
 import { ReaderToolbar } from '@/components/reader/ReaderToolbar';
+import { ReaderProgressBar } from '@/components/reader/ReaderProgressBar';
+import { ReaderBottomBar } from '@/components/reader/ReaderBottomBar';
 import { SettingsSheet } from '@/components/reader/SettingsSheet';
 import { ChapterNav } from '@/components/reader/ChapterNav';
 import { Spinner } from '@/components/ui/Spinner';
@@ -26,6 +29,9 @@ export default function Reader() {
   const restoredRef = useRef(false);
   const prefetchedRef = useRef(false);
 
+  // Ẩn/hiện toolbar + bottom bar (cuộn xuống ẩn, cuộn lên hiện, tap toggle).
+  const { visible: chromeVisible, toggle: toggleChrome } = useReaderChrome();
+
   // Metadata truyện (cho tiêu đề toolbar + book_id lưu tiến độ).
   const { data: book } = useQuery({
     queryKey: ['book', bookSlug],
@@ -33,7 +39,7 @@ export default function Reader() {
     enabled: !!bookSlug,
   });
 
-  // Danh sách chương (để map index → chapter_id khi lưu tiến độ).
+  // Danh sách chương (map index → chapter_id lưu tiến độ, tên chương kế).
   const { data: chapterList } = useQuery({
     queryKey: ['chapters', book?.id],
     queryFn: () => fetchChapterList(book!.id),
@@ -59,6 +65,10 @@ export default function Reader() {
   });
 
   const currentChapterId = chapterList?.find((c) => c.index === index)?.id;
+  const nextTitle =
+    chapter?.nextIndex !== null && chapter?.nextIndex !== undefined
+      ? chapterList?.find((c) => c.index === chapter.nextIndex)?.title
+      : undefined;
 
   // ---- Reset khi đổi chương ----
   useEffect(() => {
@@ -145,16 +155,41 @@ export default function Reader() {
     };
   }, [user]);
 
-  // ---- Tap giữa màn hình → toggle toolbar ----
-  const onContentClick = useCallback((e: React.MouseEvent) => {
-    // Bỏ qua nếu bấm vào link/nút.
-    if ((e.target as HTMLElement).closest('a,button')) return;
-    const midStart = window.innerWidth * 0.25;
-    const midEnd = window.innerWidth * 0.75;
-    if (e.clientX >= midStart && e.clientX <= midEnd) {
-      window.dispatchEvent(new Event('reader:tap'));
-    }
-  }, []);
+  // ---- Phím tắt ← / → chuyển chương (bỏ qua khi đang gõ input) ----
+  useEffect(() => {
+    if (!chapter || settingsOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.defaultPrevented || e.altKey || e.ctrlKey || e.metaKey) return;
+      const target = e.target as HTMLElement;
+      if (
+        target.tagName === 'INPUT' ||
+        target.tagName === 'TEXTAREA' ||
+        target.isContentEditable
+      )
+        return;
+      if (e.key === 'ArrowLeft' && chapter.prevIndex !== null) {
+        navigate(`/doc/${bookSlug}/${chapter.prevIndex}`);
+      } else if (e.key === 'ArrowRight' && chapter.nextIndex !== null) {
+        navigate(`/doc/${bookSlug}/${chapter.nextIndex}`);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [chapter, bookSlug, navigate, settingsOpen]);
+
+  // ---- Tap giữa màn hình → toggle toolbar + bottom bar ----
+  const onContentClick = useCallback(
+    (e: React.MouseEvent) => {
+      // Bỏ qua nếu bấm vào link/nút.
+      if ((e.target as HTMLElement).closest('a,button')) return;
+      const midStart = window.innerWidth * 0.25;
+      const midEnd = window.innerWidth * 0.75;
+      if (e.clientX >= midStart && e.clientX <= midEnd) {
+        toggleChrome();
+      }
+    },
+    [toggleChrome],
+  );
 
   // ---- Trạng thái lỗi ----
   if (error instanceof ApiError && error.status === 401) {
@@ -197,9 +232,11 @@ export default function Reader() {
 
   return (
     <div className="min-h-dvh">
+      <ReaderProgressBar />
       <ReaderToolbar
         bookTitle={book?.title ?? '…'}
         bookSlug={bookSlug}
+        visible={chromeVisible}
         onOpenSettings={() => setSettingsOpen(true)}
       />
 
@@ -218,10 +255,22 @@ export default function Reader() {
               bookSlug={bookSlug}
               prevIndex={chapter.prevIndex}
               nextIndex={chapter.nextIndex}
+              nextTitle={nextTitle}
             />
           </div>
         )}
       </div>
+
+      {chapter && (
+        <ReaderBottomBar
+          bookSlug={bookSlug}
+          index={chapter.index}
+          totalChapters={chapterList?.length ?? book?.chapter_count ?? null}
+          prevIndex={chapter.prevIndex}
+          nextIndex={chapter.nextIndex}
+          visible={chromeVisible}
+        />
+      )}
 
       <SettingsSheet
         open={settingsOpen}

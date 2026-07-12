@@ -22,12 +22,15 @@ export function ReaderPane({ title, index, content }: ReaderPaneProps) {
   );
 
   return (
-    <article className="reader-prose px-5 pb-24 pt-6 sm:px-0">
-      <header className="mb-6">
-        <p className="mb-1 font-sans text-xs uppercase tracking-wide text-muted">
+    <article className="reader-prose px-5 pb-24 pt-8 sm:px-0">
+      <header className="mb-10">
+        <p className="mb-2 font-sans text-xs font-medium uppercase tracking-[0.18em] text-muted">
           Chương {index}
         </p>
-        <h1 className="font-serif text-xl font-medium leading-snug">{title}</h1>
+        <h1 className="font-serif text-2xl font-medium leading-snug">
+          {title}
+        </h1>
+        <div className="mt-6 h-px w-10 bg-border" aria-hidden />
       </header>
 
       {paragraphs.map((p, i) => (
