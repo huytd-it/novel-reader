@@ -51,9 +51,10 @@ export async function updateBook(
     .update(patch)
     .eq('id', id)
     .select('*')
-    .single();
+    .maybeSingle();
 
   if (error) throw new ApiError(500, error.message);
+  if (!data) throw new ApiError(404, 'Không tìm thấy truyện này (có thể đã bị xoá).');
   return data;
 }
 
