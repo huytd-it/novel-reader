@@ -1,8 +1,5 @@
 import { useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
-import { useAuth } from '@/lib/auth';
-import { fetchMyRole } from '@/lib/api';
 import {
   prepareEpub,
   adminImport,
@@ -10,89 +7,17 @@ import {
   type PreparedImport,
   type AdminImportResult,
 } from '@/lib/admin';
-import { SiteHeader } from '@/components/SiteHeader';
+import { AdminGate } from '@/components/admin/AdminGate';
 import { Button } from '@/components/ui/Button';
 import { Spinner } from '@/components/ui/Spinner';
 
 const PREVIEW_COUNT = 10;
 
 export default function AdminImport() {
-  const { user, loading: authLoading } = useAuth();
-
-  const { data: role, isLoading: roleLoading } = useQuery({
-    queryKey: ['my-role', user?.id],
-    queryFn: () => fetchMyRole(user!.id),
-    enabled: !!user,
-  });
-
-  if (authLoading || (user && roleLoading)) {
-    return (
-      <Shell>
-        <Spinner label="Đang kiểm tra quyền…" />
-      </Shell>
-    );
-  }
-
-  if (!user) {
-    return (
-      <Shell>
-        <Gate
-          title="Cần đăng nhập"
-          body="Trang quản trị yêu cầu tài khoản admin."
-          action={
-            <Link to="/dang-nhap?next=/admin/import">
-              <Button variant="solid">Đăng nhập</Button>
-            </Link>
-          }
-        />
-      </Shell>
-    );
-  }
-
-  if (role !== 'admin') {
-    return (
-      <Shell>
-        <Gate
-          title="Không có quyền"
-          body="Tài khoản của bạn không phải admin. Liên hệ quản trị để được cấp quyền."
-        />
-      </Shell>
-    );
-  }
-
   return (
-    <Shell>
+    <AdminGate next="/admin/import">
       <ImportWorkspace />
-    </Shell>
-  );
-}
-
-function Shell({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="min-h-dvh bg-canvas text-ink">
-      <SiteHeader />
-      <main className="mx-auto max-w-3xl px-6 py-14">{children}</main>
-    </div>
-  );
-}
-
-function Gate({
-  title,
-  body,
-  action,
-}: {
-  title: string;
-  body: string;
-  action?: React.ReactNode;
-}) {
-  return (
-    <div className="rounded-xl border border-hairline bg-white p-8 text-center">
-      <h1 className="font-display text-2xl font-medium tracking-[-0.02em] text-ink-strong">
-        {title}
-      </h1>
-      <p className="mx-auto mt-2 max-w-md text-sm text-ink-muted">{body}</p>
-      {action && <div className="mt-6 flex justify-center">{action}</div>}
-    </div>
+    </AdminGate>
   );
 }
 

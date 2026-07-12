@@ -76,6 +76,26 @@ export const PlusIcon = (p: SVGProps<SVGSVGElement>) => (
   </svg>
 );
 
+export const SearchIcon = (p: SVGProps<SVGSVGElement>) => (
+  <svg {...base} {...p}>
+    <circle cx="11" cy="11" r="7" />
+    <path d="m21 21-4.3-4.3" />
+  </svg>
+);
+
+export const ChevronDownIcon = (p: SVGProps<SVGSVGElement>) => (
+  <svg {...base} {...p}>
+    <path d="m6 9 6 6 6-6" />
+  </svg>
+);
+
+export const UserIcon = (p: SVGProps<SVGSVGElement>) => (
+  <svg {...base} {...p}>
+    <circle cx="12" cy="8" r="4" />
+    <path d="M4 20c0-3.3 3.6-6 8-6s8 2.7 8 6" />
+  </svg>
+);
+
 export const GoogleIcon = (p: SVGProps<SVGSVGElement>) => (
   <svg width={18} height={18} viewBox="0 0 24 24" aria-hidden {...p}>
     <path

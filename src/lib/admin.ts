@@ -7,6 +7,7 @@
 import { supabase } from './supabase';
 import { ApiError } from './api';
 import { parseEpubBuffer, type ParsedEpub } from './epub';
+import { stripDiacritics } from './text';
 
 // Lưu ý: module này kéo theo jszip + fast-xml-parser (nặng). Chỉ import từ
 // route admin (được lazy-load). fetchMyRole cố tình đặt ở api.ts để header/
@@ -28,12 +29,7 @@ export interface PreparedImport {
 
 /** slug thân thiện URL từ tựa tiếng Việt (bỏ dấu, thay đ→d). */
 export function slugify(input: string): string {
-  return input
-    .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '') // bỏ dấu thanh/dấu phụ
-    .replace(/đ/g, 'd')
-    .replace(/Đ/g, 'D')
-    .toLowerCase()
+  return stripDiacritics(input)
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '')
     .slice(0, 80);
