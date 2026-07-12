@@ -39,3 +39,6 @@ supabase/.temp
 
 # EPUB source files staged for ingest
 scripts/epub/*.epub
+
+# TS build info
+*.tsbuildinfo
