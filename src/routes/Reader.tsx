@@ -69,7 +69,10 @@ export default function Reader() {
 
   // ---- Khôi phục vị trí scroll từ tiến độ (chỉ chương đang lưu) ----
   useEffect(() => {
-    if (!chapter || restoredRef.current || !user || !book) return;
+    // Chờ có currentChapterId (chapterList đã tải) trước khi đánh dấu đã khôi
+    // phục — nếu không, so khớp chapter_id sẽ trượt và không bao giờ thử lại.
+    if (!chapter || restoredRef.current || !user || !book || !currentChapterId)
+      return;
     restoredRef.current = true;
 
     void fetchProgress(book.id).then((progress) => {

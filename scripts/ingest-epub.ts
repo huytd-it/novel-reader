@@ -264,7 +264,7 @@ async function main() {
   }
 
   const title = args.title ?? metaTitle;
-  const author = args.author ?? metaAuthor || null;
+  const author = (args.author ?? metaAuthor) || null;
   console.log(
     `→ "${title}" (${author ?? 'không rõ tác giả'}) — ${chapters.length} chương, free ≤ ${args.free}`,
   );

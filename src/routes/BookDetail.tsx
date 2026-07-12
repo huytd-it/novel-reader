@@ -4,9 +4,18 @@ import { fetchBookBySlug, fetchChapterList } from '@/lib/api';
 import { fetchProgress } from '@/lib/progress';
 import { useAuth } from '@/lib/auth';
 import { SiteHeader } from '@/components/SiteHeader';
+import { Reveal } from '@/components/ui/Reveal';
 import { Spinner } from '@/components/ui/Spinner';
 import { Button } from '@/components/ui/Button';
 import { LockIcon } from '@/components/ui/icons';
+
+// Xoay vòng pastel cho tag thể loại để tạo nhịp màu nhẹ.
+const GENRE_TONES = [
+  'bg-pale-blue text-clay-blue',
+  'bg-pale-green text-clay-green',
+  'bg-pale-yellow text-clay-yellow',
+  'bg-pale-red text-clay-red',
+];
 
 export default function BookDetail() {
   const { slug = '' } = useParams();
@@ -43,9 +52,12 @@ export default function BookDetail() {
   if (bookQuery.isError || !book) {
     return (
       <Shell>
-        <div className="py-16 text-center text-muted">
+        <div className="py-24 text-center text-ink-muted">
           <p>Không tìm thấy truyện này.</p>
-          <Link to="/" className="mt-3 inline-block text-accent underline">
+          <Link
+            to="/"
+            className="mt-3 inline-block text-ink underline underline-offset-4"
+          >
             Về thư viện
           </Link>
         </div>
@@ -61,91 +73,119 @@ export default function BookDetail() {
 
   return (
     <Shell>
-      <div className="mb-8 flex flex-col gap-5 sm:flex-row">
-        <div className="mx-auto w-40 shrink-0 sm:mx-0">
-          <div className="aspect-[3/4] overflow-hidden rounded-xl border border-border bg-surface">
-            {book.cover_url ? (
-              <img
-                src={book.cover_url}
-                alt={`Bìa ${book.title}`}
-                className="h-full w-full object-cover"
-              />
-            ) : (
-              <div className="flex h-full items-center justify-center p-3 text-center font-serif text-muted">
-                {book.title}
-              </div>
-            )}
+      <Reveal>
+        <div className="mb-14 flex flex-col gap-8 sm:flex-row">
+          <div className="mx-auto w-44 shrink-0 sm:mx-0">
+            <div className="card-lift aspect-[3/4] overflow-hidden rounded-xl border border-hairline bg-white">
+              {book.cover_url ? (
+                <img
+                  src={book.cover_url}
+                  alt={`Bìa ${book.title}`}
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <div className="flex h-full items-center justify-center p-4 text-center font-display text-lg leading-tight tracking-[-0.02em] text-ink-muted">
+                  {book.title}
+                </div>
+              )}
+            </div>
           </div>
-        </div>
 
-        <div className="flex-1">
-          <h1 className="font-serif text-2xl font-medium">{book.title}</h1>
-          {book.author && (
-            <p className="mt-1 text-sm text-muted">{book.author}</p>
-          )}
-          <div className="mt-2 flex flex-wrap gap-2 text-xs text-muted">
-            <span>
-              {book.chapter_count} chương ·{' '}
-              {book.status === 'completed' ? 'Hoàn thành' : 'Đang ra'}
-            </span>
-            {book.genre?.map((g) => (
+          <div className="flex-1">
+            <h1 className="font-display text-3xl font-medium leading-[1.1] tracking-[-0.03em] text-ink-strong md:text-4xl">
+              {book.title}
+            </h1>
+            {book.author && (
+              <p className="mt-2 text-sm text-ink-muted">{book.author}</p>
+            )}
+
+            <div className="mt-4 flex flex-wrap items-center gap-2">
               <span
-                key={g}
-                className="rounded-full border border-border px-2 py-0.5"
+                className={`rounded-full px-2.5 py-1 text-[11px] uppercase tracking-[0.05em] ${
+                  book.status === 'completed'
+                    ? 'bg-pale-green text-clay-green'
+                    : 'bg-pale-blue text-clay-blue'
+                }`}
               >
-                {g}
+                {book.status === 'completed' ? 'Hoàn thành' : 'Đang ra'}
               </span>
-            ))}
-          </div>
-
-          {book.description && (
-            <p className="mt-4 whitespace-pre-line text-sm leading-relaxed text-text/90">
-              {book.description}
-            </p>
-          )}
-
-          <div className="mt-5 flex flex-wrap gap-3">
-            {resumeChapter ? (
-              <Button
-                onClick={() =>
-                  navigate(`/doc/${book.slug}/${resumeChapter.index}`)
-                }
-              >
-                Đọc tiếp — Chương {resumeChapter.index}
-              </Button>
-            ) : (
-              chapters.length > 0 && (
-                <Button
-                  onClick={() => navigate(`/doc/${book.slug}/1`)}
+              <span className="font-mono text-xs text-ink-muted">
+                {book.chapter_count} chương
+              </span>
+              {book.genre?.map((g, i) => (
+                <span
+                  key={g}
+                  className={`rounded-full px-2.5 py-1 text-[11px] uppercase tracking-[0.05em] ${
+                    GENRE_TONES[i % GENRE_TONES.length]
+                  }`}
                 >
-                  Đọc từ đầu
-                </Button>
-              )
+                  {g}
+                </span>
+              ))}
+            </div>
+
+            {book.description && (
+              <p className="mt-6 max-w-2xl whitespace-pre-line text-[15px] leading-relaxed text-ink">
+                {book.description}
+              </p>
             )}
+
+            <div className="mt-8 flex flex-wrap gap-3">
+              {resumeChapter ? (
+                <Button
+                  variant="solid"
+                  onClick={() =>
+                    navigate(`/doc/${book.slug}/${resumeChapter.index}`)
+                  }
+                >
+                  Đọc tiếp — Chương {resumeChapter.index}
+                </Button>
+              ) : (
+                chapters.length > 0 && (
+                  <Button
+                    variant="solid"
+                    onClick={() => navigate(`/doc/${book.slug}/1`)}
+                  >
+                    Đọc từ đầu
+                  </Button>
+                )
+              )}
+            </div>
           </div>
         </div>
-      </div>
+      </Reveal>
 
       <section>
-        <h2 className="mb-3 font-sans text-lg font-semibold">Mục lục</h2>
+        <div className="mb-4 flex items-baseline justify-between border-b border-hairline pb-3">
+          <h2 className="font-display text-xl font-medium tracking-[-0.02em] text-ink-strong">
+            Mục lục
+          </h2>
+          <span className="font-mono text-xs uppercase tracking-[0.06em] text-ink-muted">
+            {chapters.length} chương
+          </span>
+        </div>
         {chaptersQuery.isLoading && <Spinner label="Đang tải mục lục…" />}
         {chapters.length > 0 && (
-          <ul className="divide-y divide-border overflow-hidden rounded-xl border border-border">
+          <ul>
             {chapters.map((c) => (
-              <li key={c.id}>
+              <li key={c.id} className="border-b border-hairline">
                 <Link
                   to={`/doc/${book.slug}/${c.index}`}
-                  className="flex items-center gap-3 px-4 py-3 transition-colors duration-150 hover:bg-surface"
+                  className="flex items-center gap-4 py-3.5 transition-colors duration-150 hover:bg-white"
                 >
-                  <span className="w-10 shrink-0 text-xs tabular-nums text-muted">
-                    {c.index}
+                  <span className="w-8 shrink-0 font-mono text-xs tabular-nums text-ink-muted">
+                    {c.index.toString().padStart(2, '0')}
                   </span>
-                  <span className="flex-1 text-sm">{c.title}</span>
-                  {!c.is_free && (
+                  <span className="flex-1 text-sm text-ink">{c.title}</span>
+                  {c.is_free ? (
+                    <span className="rounded-full bg-pale-green px-2 py-0.5 text-[10px] uppercase tracking-[0.05em] text-clay-green">
+                      Miễn phí
+                    </span>
+                  ) : (
                     <LockIcon
-                      className="shrink-0 text-muted"
-                      width={16}
-                      height={16}
+                      className="shrink-0 text-ink-muted"
+                      width={15}
+                      height={15}
                     />
                   )}
                 </Link>
@@ -160,9 +200,9 @@ export default function BookDetail() {
 
 function Shell({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-dvh">
+    <div className="min-h-dvh bg-canvas text-ink">
       <SiteHeader />
-      <main className="mx-auto max-w-3xl px-5 py-6">{children}</main>
+      <main className="mx-auto max-w-3xl px-6 py-14">{children}</main>
     </div>
   );
 }
