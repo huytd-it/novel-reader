@@ -96,6 +96,18 @@ export const UserIcon = (p: SVGProps<SVGSVGElement>) => (
   </svg>
 );
 
+export const BookmarkIcon = (p: SVGProps<SVGSVGElement>) => (
+  <svg {...base} {...p}>
+    <path d="M19 21 12 16.5 5 21V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16Z" />
+  </svg>
+);
+
+export const BookmarkFilledIcon = (p: SVGProps<SVGSVGElement>) => (
+  <svg {...base} fill="currentColor" {...p}>
+    <path d="M19 21 12 16.5 5 21V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16Z" />
+  </svg>
+);
+
 export const GoogleIcon = (p: SVGProps<SVGSVGElement>) => (
   <svg width={18} height={18} viewBox="0 0 24 24" aria-hidden {...p}>
     <path

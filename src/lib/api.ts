@@ -28,6 +28,25 @@ export async function fetchPublishedBooks(genre?: string): Promise<Book[]> {
   return data ?? [];
 }
 
+/**
+ * Tìm kiếm server-side, không phân biệt dấu (RPC search_books, 0005).
+ * SECURITY INVOKER → RLS books tự áp: anon/user chỉ nhận truyện published.
+ */
+export async function searchBooks(
+  q: string,
+  limit = 24,
+  offset = 0,
+): Promise<Book[]> {
+  const { data, error } = await supabase.rpc('search_books', {
+    p_query: q,
+    p_limit: limit,
+    p_offset: offset,
+  });
+
+  if (error) throw new ApiError(500, error.message);
+  return (data as Book[]) ?? [];
+}
+
 export async function fetchBookBySlug(slug: string): Promise<Book | null> {
   const { data, error } = await supabase
     .from('books')
