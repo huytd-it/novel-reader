@@ -1,23 +1,47 @@
 import { useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
-import { fetchPublishedBooks, searchBooks } from '@/lib/api';
+import {
+  fetchFilteredBooks,
+  fetchPublishedBooks,
+  searchBooks,
+  type BookSort,
+} from '@/lib/api';
+import { fetchCompletedBooks } from '@/lib/discovery';
 import { useGenres } from '@/hooks/useGenres';
+import { useSeo } from '@/lib/seo';
 import { SiteHeader } from '@/components/SiteHeader';
 import { BookCard } from '@/components/BookCard';
 import { ContinueReading } from '@/components/shelf/ContinueReading';
+import { AnnouncementBar } from '@/components/discovery/AnnouncementBar';
+import { HeroCarousel } from '@/components/discovery/HeroCarousel';
+import { RankingWidget } from '@/components/discovery/RankingWidget';
+import { ContentModule } from '@/components/discovery/ContentModule';
 import { Reveal } from '@/components/ui/Reveal';
 import { Spinner } from '@/components/ui/Spinner';
 import { Button } from '@/components/ui/Button';
 import { CloseIcon } from '@/components/ui/icons';
 
 const SEARCH_PAGE_SIZE = 24;
+const MIN_CHAPTER_OPTIONS = [10, 50, 100, 300];
 
 export default function Library() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const genre = searchParams.get('genre');
   const q = searchParams.get('q') ?? '';
   const searching = q.trim().length > 0;
+
+  // Facets từ URL (đồng bộ 2 chiều, SPA không reload).
+  const selectedGenres = (searchParams.get('genre') ?? '')
+    .split(',')
+    .map((g) => g.trim())
+    .filter(Boolean);
+  const status = searchParams.get('status') as 'ongoing' | 'completed' | null;
+  const minChapters = Number(searchParams.get('minch')) || 0;
+  const sort = (searchParams.get('sort') as BookSort | null) ?? null;
+
+  const hasFilters =
+    selectedGenres.length > 0 || !!status || minChapters > 0 || !!sort;
+  const browsing = searching || hasFilters;
 
   const booksQuery = useQuery({
     queryKey: ['books'],
@@ -25,8 +49,14 @@ export default function Library() {
   });
   const books = booksQuery.data;
 
-  // Có từ khóa → tìm server-side (RPC search_books, không phân biệt dấu),
-  // phân trang bằng nút "Xem thêm". Không từ khóa → giữ đường cũ (['books']).
+  const completedQuery = useQuery({
+    queryKey: ['books-completed'],
+    queryFn: () => fetchCompletedBooks(10),
+    enabled: !browsing,
+  });
+
+  // Từ khóa → tìm server-side (RPC search_books, không phân biệt dấu), phân
+  // trang bằng "Xem thêm".
   const searchQuery = useInfiniteQuery({
     queryKey: ['search', q.trim()],
     queryFn: ({ pageParam }) =>
@@ -40,53 +70,107 @@ export default function Library() {
     placeholderData: (prev) => prev,
   });
 
+  // Không có từ khóa nhưng có facet → lọc server-side.
+  const filterQuery = useQuery({
+    queryKey: ['filter', selectedGenres, status, minChapters, sort],
+    queryFn: () =>
+      fetchFilteredBooks({
+        genres: selectedGenres,
+        status: status ?? undefined,
+        minChapters,
+        sort: sort ?? undefined,
+      }),
+    enabled: browsing && !searching,
+  });
+
   const isLoading = searching
     ? searchQuery.isLoading
-    : booksQuery.isLoading;
-  const isError = searching ? searchQuery.isError : booksQuery.isError;
+    : browsing
+      ? filterQuery.isLoading
+      : booksQuery.isLoading;
+  const isError = searching
+    ? searchQuery.isError
+    : browsing
+      ? filterQuery.isError
+      : booksQuery.isError;
 
   const { genres } = useGenres();
 
-  function setGenre(next: string | null) {
+  useSeo({
+    title: searching ? `Tìm: ${q}` : undefined,
+    description:
+      'Bộ sưu tập truyện chữ tiếng Việt chọn lọc, trình bày cho việc đọc dài. Đồng bộ tiến độ đọc trên mọi thiết bị.',
+  });
+
+  function updateParams(mut: (p: URLSearchParams) => void) {
     setSearchParams(
       (prev) => {
         const params = new URLSearchParams(prev);
-        if (next) params.set('genre', next);
-        else params.delete('genre');
+        mut(params);
         return params;
       },
       { replace: true },
     );
   }
 
-  function clearSearch() {
-    setSearchParams(
-      (prev) => {
-        const params = new URLSearchParams(prev);
-        params.delete('q');
-        return params;
-      },
-      { replace: true },
-    );
+  function toggleGenre(g: string) {
+    const next = selectedGenres.includes(g)
+      ? selectedGenres.filter((x) => x !== g)
+      : [...selectedGenres, g];
+    updateParams((p) => {
+      if (next.length) p.set('genre', next.join(','));
+      else p.delete('genre');
+    });
+  }
+
+  function setFacet(key: string, value: string | null) {
+    updateParams((p) => {
+      if (value) p.set(key, value);
+      else p.delete(key);
+    });
+  }
+
+  function resetFilters() {
+    updateParams((p) => {
+      p.delete('genre');
+      p.delete('status');
+      p.delete('minch');
+      p.delete('sort');
+    });
   }
 
   const filtered = useMemo(() => {
-    // Kết quả server đã khớp từ khóa; genre vẫn lọc client-side.
     if (searching) {
-      const results = searchQuery.data?.pages.flat() ?? [];
-      return genre ? results.filter((b) => b.genre?.includes(genre)) : results;
+      // Kết quả text đã khớp; áp thêm facet client-side để kết hợp.
+      let results = searchQuery.data?.pages.flat() ?? [];
+      if (selectedGenres.length)
+        results = results.filter((b) =>
+          b.genre?.some((g) => selectedGenres.includes(g)),
+        );
+      if (status) results = results.filter((b) => b.status === status);
+      if (minChapters)
+        results = results.filter((b) => b.chapter_count >= minChapters);
+      return results;
     }
-    if (!books) return [];
-    return books.filter((b) => !genre || b.genre?.includes(genre));
-  }, [searching, searchQuery.data, books, genre]);
+    if (browsing) return filterQuery.data ?? [];
+    return [];
+  }, [
+    searching,
+    browsing,
+    searchQuery.data,
+    filterQuery.data,
+    selectedGenres,
+    status,
+    minChapters,
+  ]);
 
   return (
     <div className="min-h-dvh bg-canvas text-ink">
+      <AnnouncementBar />
       <SiteHeader />
 
       {/* ---- Hero ---- */}
       <section className="relative overflow-hidden border-b border-hairline">
-        {/* Ánh sáng radial ấm, cực nhạt — tạo chiều sâu, không phá phẳng lặng */}
         <div
           aria-hidden
           className="pointer-events-none absolute inset-0"
@@ -109,27 +193,36 @@ export default function Library() {
               thiết bị.
             </p>
           </Reveal>
+          {!browsing && <HeroCarousel />}
         </div>
       </section>
 
       <main className="mx-auto max-w-5xl px-6 py-16">
-        {/* ---- Kệ "Đọc tiếp" — chỉ ở trang chủ thuần, không kèm lọc ---- */}
-        {!searching && !genre && <ContinueReading />}
+        {/* ---- Trang chủ thuần: kệ đọc tiếp + xếp hạng ---- */}
+        {!browsing && (
+          <>
+            <ContinueReading />
+            <RankingWidget />
+          </>
+        )}
 
-        {/* ---- Bộ lọc thể loại + tìm kiếm đang áp dụng ---- */}
+        {/* ---- Bộ lọc đa tiêu chí + từ khóa đang áp dụng ---- */}
         {(genres.length > 0 || q) && (
           <Reveal className="mb-10">
             <div className="flex flex-wrap items-center gap-2">
               {genres.length > 0 && (
                 <>
-                  <GenreChip active={genre === null} onClick={() => setGenre(null)}>
+                  <GenreChip
+                    active={selectedGenres.length === 0}
+                    onClick={() => setFacet('genre', null)}
+                  >
                     Tất cả
                   </GenreChip>
                   {genres.map((g) => (
                     <GenreChip
                       key={g}
-                      active={genre === g}
-                      onClick={() => setGenre(g)}
+                      active={selectedGenres.includes(g)}
+                      onClick={() => toggleGenre(g)}
                     >
                       {g}
                     </GenreChip>
@@ -138,7 +231,7 @@ export default function Library() {
               )}
               {q && (
                 <button
-                  onClick={clearSearch}
+                  onClick={() => setFacet('q', null)}
                   className="inline-flex items-center gap-1.5 rounded-full border border-ink-strong bg-ink-strong px-3.5 py-1.5 text-xs uppercase tracking-[0.05em] text-white"
                 >
                   Tìm: “{q}”
@@ -146,52 +239,117 @@ export default function Library() {
                 </button>
               )}
             </div>
+
+            {/* Facet nâng cao */}
+            <div className="mt-4 flex flex-wrap items-center gap-3">
+              <FacetSelect
+                label="Tình trạng"
+                value={status ?? ''}
+                onChange={(v) => setFacet('status', v || null)}
+                options={[
+                  { value: '', label: 'Tất cả' },
+                  { value: 'ongoing', label: 'Đang ra' },
+                  { value: 'completed', label: 'Hoàn thành' },
+                ]}
+              />
+              <FacetSelect
+                label="Số chương"
+                value={minChapters ? String(minChapters) : ''}
+                onChange={(v) => setFacet('minch', v || null)}
+                options={[
+                  { value: '', label: 'Tất cả' },
+                  ...MIN_CHAPTER_OPTIONS.map((n) => ({
+                    value: String(n),
+                    label: `≥ ${n}`,
+                  })),
+                ]}
+              />
+              <FacetSelect
+                label="Sắp xếp"
+                value={sort ?? 'moi'}
+                onChange={(v) => setFacet('sort', v === 'moi' ? null : v)}
+                options={[
+                  { value: 'moi', label: 'Mới nhất' },
+                  { value: 'danhgia', label: 'Đánh giá' },
+                  { value: 'chuong', label: 'Số chương' },
+                ]}
+              />
+              {hasFilters && (
+                <button
+                  onClick={resetFilters}
+                  className="inline-flex items-center gap-1.5 text-xs uppercase tracking-[0.05em] text-ink-muted underline-offset-2 hover:text-ink hover:underline"
+                >
+                  <CloseIcon width={13} height={13} />
+                  Đặt lại bộ lọc
+                </button>
+              )}
+            </div>
           </Reveal>
         )}
 
-        {isLoading && <Spinner label="Đang tải thư viện…" />}
-        {isError && (
-          <p className="py-16 text-center text-ink-muted">
-            Không tải được danh sách truyện. Thử lại sau nhé.
-          </p>
-        )}
-        {!isLoading && !isError && filtered.length === 0 && (
-          <p className="py-16 text-center text-ink-muted">
-            {searching
-              ? `Không tìm thấy truyện nào cho “${q}”.`
-              : 'Chưa có truyện nào.'}
-          </p>
-        )}
-
-        {filtered.length > 0 && (
+        {/* ---- Chế độ duyệt: lưới kết quả ---- */}
+        {browsing && (
           <>
-            {searching && (
-              <p className="mb-6 font-mono text-xs uppercase tracking-[0.06em] text-ink-muted">
-                {filtered.length} kết quả cho “{q}”
+            {isLoading && <Spinner label="Đang tải thư viện…" />}
+            {isError && (
+              <p className="py-16 text-center text-ink-muted">
+                Không tải được danh sách truyện. Thử lại sau nhé.
               </p>
             )}
-            <div className="grid grid-cols-2 gap-5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-              {filtered.map((book, i) => (
-                <Reveal
-                  key={book.id}
-                  delay={Math.min(i, 9) * 70}
-                  className="h-full"
-                >
-                  <BookCard book={book} />
-                </Reveal>
-              ))}
-            </div>
-            {searching && searchQuery.hasNextPage && (
-              <div className="mt-10 text-center">
-                <Button
-                  variant="hairline"
-                  disabled={searchQuery.isFetchingNextPage}
-                  onClick={() => void searchQuery.fetchNextPage()}
-                >
-                  {searchQuery.isFetchingNextPage ? 'Đang tải…' : 'Xem thêm'}
-                </Button>
-              </div>
+            {!isLoading && !isError && filtered.length === 0 && (
+              <p className="py-16 text-center text-ink-muted">
+                {searching
+                  ? `Không tìm thấy truyện nào cho “${q}”.`
+                  : 'Không có truyện nào khớp bộ lọc.'}
+              </p>
             )}
+
+            {filtered.length > 0 && (
+              <>
+                <p className="mb-6 font-mono text-xs uppercase tracking-[0.06em] text-ink-muted">
+                  {filtered.length} {searching ? `kết quả cho “${q}”` : 'truyện'}
+                </p>
+                <div className="grid grid-cols-2 gap-5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+                  {filtered.map((book, i) => (
+                    <Reveal
+                      key={book.id}
+                      delay={Math.min(i, 9) * 70}
+                      className="h-full"
+                    >
+                      <BookCard book={book} />
+                    </Reveal>
+                  ))}
+                </div>
+                {searching && searchQuery.hasNextPage && (
+                  <div className="mt-10 text-center">
+                    <Button
+                      variant="hairline"
+                      disabled={searchQuery.isFetchingNextPage}
+                      onClick={() => void searchQuery.fetchNextPage()}
+                    >
+                      {searchQuery.isFetchingNextPage ? 'Đang tải…' : 'Xem thêm'}
+                    </Button>
+                  </div>
+                )}
+              </>
+            )}
+          </>
+        )}
+
+        {/* ---- Trang chủ thuần: các module nội dung ---- */}
+        {!browsing && (
+          <>
+            <ContentModule
+              title="Mới nhất"
+              books={books}
+              isLoading={booksQuery.isLoading}
+              emptyText="Chưa có truyện nào."
+            />
+            <ContentModule
+              title="Đã hoàn thành"
+              books={completedQuery.data}
+              isLoading={completedQuery.isLoading}
+            />
           </>
         )}
       </main>
@@ -220,5 +378,34 @@ function GenreChip({
     >
       {children}
     </button>
+  );
+}
+
+function FacetSelect({
+  label,
+  value,
+  onChange,
+  options,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  options: { value: string; label: string }[];
+}) {
+  return (
+    <label className="inline-flex items-center gap-2 text-xs text-ink-muted">
+      <span className="uppercase tracking-[0.05em]">{label}</span>
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="rounded-md border border-hairline bg-white px-2.5 py-1.5 text-xs text-ink outline-none transition-colors focus:border-ink"
+      >
+        {options.map((o) => (
+          <option key={o.value} value={o.value}>
+            {o.label}
+          </option>
+        ))}
+      </select>
+    </label>
   );
 }

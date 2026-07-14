@@ -15,6 +15,7 @@ const AdminImport = lazy(() => import('./routes/AdminImport'));
 const AdminBooks = lazy(() => import('./routes/AdminBooks'));
 const AdminBookEdit = lazy(() => import('./routes/AdminBookEdit'));
 const AdminAnalytics = lazy(() => import('./routes/AdminAnalytics'));
+const AdminAnnouncements = lazy(() => import('./routes/AdminAnnouncements'));
 
 /** Đồng bộ reader settings → DOM (data-theme, CSS vars) ở cấp app. */
 function SettingsApplier() {
@@ -69,6 +70,14 @@ export default function App() {
           element={
             <Suspense fallback={null}>
               <AdminAnalytics />
+            </Suspense>
+          }
+        />
+        <Route
+          path="/admin/announcements"
+          element={
+            <Suspense fallback={null}>
+              <AdminAnnouncements />
             </Suspense>
           }
         />

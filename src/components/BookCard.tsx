@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import type { Book } from '@/lib/types';
+import { StarFilledIcon } from '@/components/ui/icons';
 
 export function BookCard({ book }: { book: Book }) {
   return (
@@ -28,10 +29,18 @@ export function BookCard({ book }: { book: Book }) {
         {book.author && (
           <p className="line-clamp-1 text-xs text-ink-muted">{book.author}</p>
         )}
-        <p className="mt-auto pt-2 font-mono text-[11px] uppercase tracking-[0.06em] text-ink-muted">
-          {book.chapter_count} chương
-          {book.status === 'completed' ? ' · Hoàn thành' : ''}
-        </p>
+        <div className="mt-auto flex items-center justify-between gap-2 pt-2">
+          <p className="font-mono text-[11px] uppercase tracking-[0.06em] text-ink-muted">
+            {book.chapter_count} chương
+            {book.status === 'completed' ? ' · Hoàn thành' : ''}
+          </p>
+          {(book.rating_count ?? 0) > 0 && (
+            <span className="inline-flex shrink-0 items-center gap-0.5 font-mono text-[11px] text-ink-muted">
+              <StarFilledIcon width={11} height={11} className="text-clay-yellow" />
+              {book.rating_avg?.toFixed(1)}
+            </span>
+          )}
+        </div>
       </div>
     </Link>
   );

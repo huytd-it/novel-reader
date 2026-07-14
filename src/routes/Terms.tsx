@@ -1,8 +1,13 @@
 import { SiteHeader } from '@/components/SiteHeader';
 import { Reveal } from '@/components/ui/Reveal';
+import { useSeo } from '@/lib/seo';
 
 // Trang tĩnh — nội dung điều khoản được Auth.tsx dẫn tới.
 export default function Terms() {
+  useSeo({
+    title: 'Điều khoản sử dụng',
+    description: 'Điều khoản sử dụng nền tảng đọc truyện chữ.',
+  });
   return (
     <div className="min-h-dvh bg-canvas text-ink">
       <SiteHeader />

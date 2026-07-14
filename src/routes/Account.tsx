@@ -4,12 +4,17 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/lib/auth';
 import { fetchMyProfile, updateDisplayName } from '@/lib/profile';
 import { fetchMyShelf } from '@/lib/progress';
+import { fetchMyBookList } from '@/lib/bookshelf';
 import {
   fetchMyBookmarks,
   removeBookmark,
   updateBookmarkNote,
 } from '@/lib/bookmarks';
-import type { BookmarkWithContext, ShelfItem } from '@/lib/types';
+import type {
+  BookListStatus,
+  BookmarkWithContext,
+  ShelfItem,
+} from '@/lib/types';
 import { SiteHeader } from '@/components/SiteHeader';
 import { Reveal } from '@/components/ui/Reveal';
 import { Spinner } from '@/components/ui/Spinner';
@@ -42,6 +47,7 @@ export default function Account() {
 
             <div className="mt-12 space-y-14">
               <ProfileSection userId={user.id} email={user.email ?? ''} />
+              <BookshelfSection userId={user.id} />
               <ShelfSection userId={user.id} />
               <BookmarksSection userId={user.id} />
             </div>
@@ -135,7 +141,83 @@ function ProfileSection({ userId, email }: { userId: string; email: string }) {
   );
 }
 
-// ---- Đang đọc: lịch sử từ reading_progress ----
+// ---- Tủ sách: phân loại thủ công (book_lists) ----
+
+const SHELF_TABS: { value: BookListStatus; label: string }[] = [
+  { value: 'reading', label: 'Đang đọc' },
+  { value: 'want', label: 'Muốn đọc' },
+  { value: 'read', label: 'Đã đọc' },
+];
+
+function BookshelfSection({ userId }: { userId: string }) {
+  const [tab, setTab] = useState<BookListStatus>('reading');
+
+  const { data: entries, isLoading } = useQuery({
+    queryKey: ['my-book-list', tab, userId],
+    queryFn: () => fetchMyBookList(tab),
+  });
+
+  return (
+    <section>
+      <SectionHeader title="Tủ sách" />
+      <div className="mb-4 flex gap-2">
+        {SHELF_TABS.map((t) => (
+          <button
+            key={t.value}
+            onClick={() => setTab(t.value)}
+            aria-pressed={tab === t.value}
+            className={`rounded-full border px-3.5 py-1.5 text-xs uppercase tracking-[0.05em] transition-colors duration-150 ${
+              tab === t.value
+                ? 'border-ink-strong bg-ink-strong text-white'
+                : 'border-hairline text-ink-muted hover:text-ink'
+            }`}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+      {isLoading && <Spinner label="Đang tải…" />}
+      {entries && entries.length === 0 && (
+        <p className="py-6 text-sm text-ink-muted">
+          Chưa có truyện nào trong mục này. Vào trang truyện để thêm vào tủ.
+        </p>
+      )}
+      {entries && entries.length > 0 && (
+        <ul>
+          {entries.map((e) => (
+            <li key={e.book_id} className="border-b border-hairline">
+              <Link
+                to={`/truyen/${e.book!.slug}`}
+                className="flex items-center gap-4 py-3.5 transition-colors duration-150 hover:bg-white"
+              >
+                <span className="h-14 w-10 shrink-0 overflow-hidden rounded border border-hairline bg-white">
+                  {e.book!.cover_url ? (
+                    <img
+                      src={e.book!.cover_url}
+                      alt=""
+                      className="h-full w-full object-cover"
+                    />
+                  ) : null}
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-sm text-ink">
+                    {e.book!.title}
+                  </span>
+                  <span className="mt-0.5 block font-mono text-xs text-ink-muted">
+                    {e.book!.chapter_count} chương
+                    {e.book!.status === 'completed' ? ' · Hoàn thành' : ''}
+                  </span>
+                </span>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+}
+
+// ---- Lịch sử đọc: từ reading_progress ----
 
 function ShelfSection({ userId }: { userId: string }) {
   const { data: shelf, isLoading } = useQuery({
@@ -146,7 +228,7 @@ function ShelfSection({ userId }: { userId: string }) {
   return (
     <section>
       <SectionHeader
-        title="Đang đọc"
+        title="Lịch sử đọc"
         meta={shelf ? `${shelf.length} truyện` : undefined}
       />
       {isLoading && <Spinner label="Đang tải…" />}

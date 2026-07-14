@@ -43,6 +43,7 @@ function EditWorkspace({ id }: { id: string }) {
   const [genre, setGenre] = useState('');
   const [status, setStatus] = useState<BookStatus>('ongoing');
   const [isPublished, setIsPublished] = useState(false);
+  const [isFeatured, setIsFeatured] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [saved, setSaved] = useState(false);
 
@@ -54,6 +55,7 @@ function EditWorkspace({ id }: { id: string }) {
     setGenre(book.genre?.join(', ') ?? '');
     setStatus(book.status);
     setIsPublished(book.is_published);
+    setIsFeatured(book.is_featured ?? false);
   }, [book]);
 
   const save = useMutation({
@@ -68,6 +70,7 @@ function EditWorkspace({ id }: { id: string }) {
           .filter(Boolean),
         status,
         is_published: isPublished,
+        is_featured: isFeatured,
       }),
     onSuccess: () => {
       setSaved(true);
@@ -179,6 +182,16 @@ function EditWorkspace({ id }: { id: string }) {
             Publish (hiển thị công khai)
           </label>
         </div>
+
+        <label className="flex items-center gap-2 text-sm text-ink">
+          <input
+            type="checkbox"
+            checked={isFeatured}
+            onChange={(e) => setIsFeatured(e.target.checked)}
+            className="h-4 w-4 accent-ink-strong"
+          />
+          Tuyển chọn (đưa lên hero trang chủ)
+        </label>
 
         <div className="mt-2 flex flex-wrap items-center gap-3">
           <Button
