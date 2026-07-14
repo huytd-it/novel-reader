@@ -91,7 +91,10 @@ function ImportWorkspace() {
     }
   }
 
-  const chapters = prepared?.parsed.chapters ?? [];
+  const chapters = useMemo(
+    () => prepared?.parsed.chapters ?? [],
+    [prepared],
+  );
   const previewChapters = useMemo(
     () => chapters.slice(0, PREVIEW_COUNT),
     [chapters],

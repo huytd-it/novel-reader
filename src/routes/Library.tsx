@@ -1,24 +1,49 @@
 import { useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
-import { fetchPublishedBooks } from '@/lib/api';
+import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
+import { fetchPublishedBooks, searchBooks } from '@/lib/api';
 import { useGenres } from '@/hooks/useGenres';
-import { stripDiacritics } from '@/lib/text';
 import { SiteHeader } from '@/components/SiteHeader';
 import { BookCard } from '@/components/BookCard';
+import { ContinueReading } from '@/components/shelf/ContinueReading';
 import { Reveal } from '@/components/ui/Reveal';
 import { Spinner } from '@/components/ui/Spinner';
+import { Button } from '@/components/ui/Button';
 import { CloseIcon } from '@/components/ui/icons';
+
+const SEARCH_PAGE_SIZE = 24;
 
 export default function Library() {
   const [searchParams, setSearchParams] = useSearchParams();
   const genre = searchParams.get('genre');
   const q = searchParams.get('q') ?? '';
+  const searching = q.trim().length > 0;
 
-  const { data: books, isLoading, isError } = useQuery({
+  const booksQuery = useQuery({
     queryKey: ['books'],
     queryFn: () => fetchPublishedBooks(),
   });
+  const books = booksQuery.data;
+
+  // Có từ khóa → tìm server-side (RPC search_books, không phân biệt dấu),
+  // phân trang bằng nút "Xem thêm". Không từ khóa → giữ đường cũ (['books']).
+  const searchQuery = useInfiniteQuery({
+    queryKey: ['search', q.trim()],
+    queryFn: ({ pageParam }) =>
+      searchBooks(q.trim(), SEARCH_PAGE_SIZE, pageParam),
+    initialPageParam: 0,
+    getNextPageParam: (lastPage, allPages) =>
+      lastPage.length === SEARCH_PAGE_SIZE
+        ? allPages.length * SEARCH_PAGE_SIZE
+        : undefined,
+    enabled: searching,
+    placeholderData: (prev) => prev,
+  });
+
+  const isLoading = searching
+    ? searchQuery.isLoading
+    : booksQuery.isLoading;
+  const isError = searching ? searchQuery.isError : booksQuery.isError;
 
   const { genres } = useGenres();
 
@@ -46,15 +71,14 @@ export default function Library() {
   }
 
   const filtered = useMemo(() => {
+    // Kết quả server đã khớp từ khóa; genre vẫn lọc client-side.
+    if (searching) {
+      const results = searchQuery.data?.pages.flat() ?? [];
+      return genre ? results.filter((b) => b.genre?.includes(genre)) : results;
+    }
     if (!books) return [];
-    const nq = stripDiacritics(q.trim());
-    return books.filter((b) => {
-      if (genre && !b.genre?.includes(genre)) return false;
-      if (!nq) return true;
-      const haystack = stripDiacritics(`${b.title} ${b.author ?? ''}`);
-      return haystack.includes(nq);
-    });
-  }, [books, genre, q]);
+    return books.filter((b) => !genre || b.genre?.includes(genre));
+  }, [searching, searchQuery.data, books, genre]);
 
   return (
     <div className="min-h-dvh bg-canvas text-ink">
@@ -89,6 +113,9 @@ export default function Library() {
       </section>
 
       <main className="mx-auto max-w-5xl px-6 py-16">
+        {/* ---- Kệ "Đọc tiếp" — chỉ ở trang chủ thuần, không kèm lọc ---- */}
+        {!searching && !genre && <ContinueReading />}
+
         {/* ---- Bộ lọc thể loại + tìm kiếm đang áp dụng ---- */}
         {(genres.length > 0 || q) && (
           <Reveal className="mb-10">
@@ -129,21 +156,43 @@ export default function Library() {
           </p>
         )}
         {!isLoading && !isError && filtered.length === 0 && (
-          <p className="py-16 text-center text-ink-muted">Chưa có truyện nào.</p>
+          <p className="py-16 text-center text-ink-muted">
+            {searching
+              ? `Không tìm thấy truyện nào cho “${q}”.`
+              : 'Chưa có truyện nào.'}
+          </p>
         )}
 
         {filtered.length > 0 && (
-          <div className="grid grid-cols-2 gap-5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-            {filtered.map((book, i) => (
-              <Reveal
-                key={book.id}
-                delay={Math.min(i, 9) * 70}
-                className="h-full"
-              >
-                <BookCard book={book} />
-              </Reveal>
-            ))}
-          </div>
+          <>
+            {searching && (
+              <p className="mb-6 font-mono text-xs uppercase tracking-[0.06em] text-ink-muted">
+                {filtered.length} kết quả cho “{q}”
+              </p>
+            )}
+            <div className="grid grid-cols-2 gap-5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+              {filtered.map((book, i) => (
+                <Reveal
+                  key={book.id}
+                  delay={Math.min(i, 9) * 70}
+                  className="h-full"
+                >
+                  <BookCard book={book} />
+                </Reveal>
+              ))}
+            </div>
+            {searching && searchQuery.hasNextPage && (
+              <div className="mt-10 text-center">
+                <Button
+                  variant="hairline"
+                  disabled={searchQuery.isFetchingNextPage}
+                  onClick={() => void searchQuery.fetchNextPage()}
+                >
+                  {searchQuery.isFetchingNextPage ? 'Đang tải…' : 'Xem thêm'}
+                </Button>
+              </div>
+            )}
+          </>
         )}
       </main>
     </div>
