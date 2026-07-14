@@ -12,7 +12,68 @@ export interface Book {
   genre: string[] | null;
   status: BookStatus;
   is_published: boolean;
+  is_featured?: boolean;
   chapter_count: number;
+  created_at: string;
+  // Điểm đánh giá tổng hợp (0009) — có khi query kèm.
+  rating_avg?: number | null;
+  rating_count?: number | null;
+}
+
+/** Một mục trong bảng xếp hạng "Hot" (RPC popular_books, 0007). */
+export interface PopularBook {
+  id: string;
+  slug: string;
+  title: string;
+  author: string | null;
+  cover_url: string | null;
+  status: BookStatus;
+  chapter_count: number;
+  reads: number;
+  trend: '↑' | '↓' | '→';
+}
+
+export interface Review {
+  id: string;
+  user_id: string;
+  book_id: string;
+  rating: number;
+  body: string | null;
+  author_name: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export type BookListStatus = 'reading' | 'want' | 'read';
+
+export interface BookListEntry {
+  user_id: string;
+  book_id: string;
+  status: BookListStatus;
+  updated_at: string;
+  book?: Book | null;
+}
+
+export interface AppNotification {
+  id: string;
+  user_id: string;
+  book_id: string | null;
+  chapter_id: string | null;
+  kind: 'new_chapter' | 'system';
+  title: string;
+  is_read: boolean;
+  created_at: string;
+  book?: { slug: string } | null;
+  chapter?: { index: number } | null;
+}
+
+export type AnnouncementKind = 'info' | 'warning' | 'success';
+
+export interface Announcement {
+  id: string;
+  message: string;
+  kind: AnnouncementKind;
+  is_active: boolean;
   created_at: string;
 }
 
