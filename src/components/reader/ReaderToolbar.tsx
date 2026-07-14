@@ -1,12 +1,21 @@
 import { useNavigate } from 'react-router-dom';
 import { IconButton } from '@/components/ui/IconButton';
-import { ArrowLeft, ListIcon, SettingsIcon } from '@/components/ui/icons';
+import {
+  ArrowLeft,
+  BookmarkFilledIcon,
+  BookmarkIcon,
+  ListIcon,
+  SettingsIcon,
+} from '@/components/ui/icons';
 
 interface ReaderToolbarProps {
   bookTitle: string;
   bookSlug: string;
   visible: boolean;
   onOpenSettings: () => void;
+  /** Chỉ hiện nút đánh dấu khi Reader truyền handler (user đã đăng nhập). */
+  bookmarked?: boolean;
+  onToggleBookmark?: () => void;
 }
 
 /**
@@ -18,6 +27,8 @@ export function ReaderToolbar({
   bookSlug,
   visible,
   onOpenSettings,
+  bookmarked = false,
+  onToggleBookmark,
 }: ReaderToolbarProps) {
   const navigate = useNavigate();
 
@@ -37,6 +48,15 @@ export function ReaderToolbar({
         <p className="flex-1 truncate px-2 font-sans text-sm text-muted">
           {bookTitle}
         </p>
+        {onToggleBookmark && (
+          <IconButton
+            label={bookmarked ? 'Bỏ đánh dấu chương' : 'Đánh dấu chương'}
+            onClick={onToggleBookmark}
+            className={bookmarked ? 'text-accent' : undefined}
+          >
+            {bookmarked ? <BookmarkFilledIcon /> : <BookmarkIcon />}
+          </IconButton>
+        )}
         <IconButton
           label="Mục lục"
           onClick={() => navigate(`/truyen/${bookSlug}`)}
