@@ -28,6 +28,65 @@ export async function fetchPublishedBooks(genre?: string): Promise<Book[]> {
   return data ?? [];
 }
 
+/**
+ * Tìm kiếm server-side, không phân biệt dấu (RPC search_books, 0005).
+ * SECURITY INVOKER → RLS books tự áp: anon/user chỉ nhận truyện published.
+ */
+export async function searchBooks(
+  q: string,
+  limit = 24,
+  offset = 0,
+): Promise<Book[]> {
+  const { data, error } = await supabase.rpc('search_books', {
+    p_query: q,
+    p_limit: limit,
+    p_offset: offset,
+  });
+
+  if (error) throw new ApiError(500, error.message);
+  return (data as Book[]) ?? [];
+}
+
+export type BookSort = 'moi' | 'danhgia' | 'chuong';
+
+export interface BookFilter {
+  genres?: string[];
+  status?: 'ongoing' | 'completed';
+  minChapters?: number;
+  sort?: BookSort;
+}
+
+/**
+ * Lọc truyện đa tiêu chí (đọc thẳng qua RLS — books published-only).
+ * Thể loại: overlaps (khớp bất kỳ thể loại nào đã chọn).
+ */
+export async function fetchFilteredBooks(filter: BookFilter): Promise<Book[]> {
+  let query = supabase.from('books').select('*').eq('is_published', true);
+
+  if (filter.genres && filter.genres.length > 0) {
+    query = query.overlaps('genre', filter.genres);
+  }
+  if (filter.status) query = query.eq('status', filter.status);
+  if (filter.minChapters && filter.minChapters > 0) {
+    query = query.gte('chapter_count', filter.minChapters);
+  }
+
+  switch (filter.sort) {
+    case 'danhgia':
+      query = query.order('rating_avg', { ascending: false, nullsFirst: false });
+      break;
+    case 'chuong':
+      query = query.order('chapter_count', { ascending: false });
+      break;
+    default:
+      query = query.order('created_at', { ascending: false });
+  }
+
+  const { data, error } = await query;
+  if (error) throw new ApiError(500, error.message);
+  return data ?? [];
+}
+
 export async function fetchBookBySlug(slug: string): Promise<Book | null> {
   const { data, error } = await supabase
     .from('books')

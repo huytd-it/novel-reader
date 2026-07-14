@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { GenreMenu } from './nav/GenreMenu';
 import { SearchBox } from './nav/SearchBox';
 import { AccountMenu } from './nav/AccountMenu';
+import { NotificationBell } from './nav/NotificationBell';
 
 /** Header đơn giản cho các trang ngoài Reader (Reader có toolbar riêng). */
 export function SiteHeader() {
@@ -17,6 +18,7 @@ export function SiteHeader() {
         <nav className="flex items-center gap-3">
           <GenreMenu />
           <SearchBox />
+          <NotificationBell />
           <AccountMenu />
         </nav>
       </div>

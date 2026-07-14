@@ -5,6 +5,8 @@ import { fetchChapter, fetchBookBySlug, fetchChapterList, ApiError } from '@/lib
 import { fetchProgress, saveProgressDebounced, flushProgressBeacon } from '@/lib/progress';
 import { useAuth } from '@/lib/auth';
 import { useReaderChrome } from '@/hooks/useReaderChrome';
+import { useChapterBookmark } from '@/hooks/useChapterBookmark';
+import { useSeo } from '@/lib/seo';
 import { ReaderPane } from '@/components/reader/ReaderPane';
 import { ReaderToolbar } from '@/components/reader/ReaderToolbar';
 import { ReaderProgressBar } from '@/components/reader/ReaderProgressBar';
@@ -65,6 +67,16 @@ export default function Reader() {
   });
 
   const currentChapterId = chapterList?.find((c) => c.index === index)?.id;
+  const chapterBookmark = useChapterBookmark(currentChapterId);
+
+  useSeo({
+    title:
+      chapter && book
+        ? `${chapter.title} — ${book.title}`
+        : book?.title,
+    description: book?.description ?? undefined,
+    type: 'article',
+  });
   const nextTitle =
     chapter?.nextIndex !== null && chapter?.nextIndex !== undefined
       ? chapterList?.find((c) => c.index === chapter.nextIndex)?.title
@@ -238,6 +250,10 @@ export default function Reader() {
         bookSlug={bookSlug}
         visible={chromeVisible}
         onOpenSettings={() => setSettingsOpen(true)}
+        bookmarked={chapterBookmark.bookmarked}
+        onToggleBookmark={
+          chapterBookmark.enabled ? chapterBookmark.toggle : undefined
+        }
       />
 
       {/* padding-top để chừa chỗ toolbar */}

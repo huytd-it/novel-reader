@@ -1,5 +1,6 @@
 import { supabase } from './supabase';
-import type { ReadingProgress } from './types';
+import { ApiError } from './api';
+import type { ReadingProgress, ShelfItem } from './types';
 
 /**
  * Lưu tiến độ đọc.
@@ -83,6 +84,22 @@ export function flushProgressBeacon(
     },
     body,
   });
+}
+
+/**
+ * Kệ "Đọc tiếp": mọi truyện có tiến độ, mới đọc trước. Embed book + chapter
+ * qua FK; truyện unpublish → book = null (RLS books) → lọc bỏ.
+ */
+export async function fetchMyShelf(): Promise<ShelfItem[]> {
+  const { data, error } = await supabase
+    .from('reading_progress')
+    .select('*, book:books(*), chapter:chapters(id, index, title)')
+    .order('updated_at', { ascending: false })
+    .limit(24);
+
+  if (error) throw new ApiError(500, error.message);
+  const rows = (data as unknown as ShelfItem[]) ?? [];
+  return rows.filter((item) => item.book);
 }
 
 export async function fetchProgress(

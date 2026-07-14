@@ -40,6 +40,7 @@ export interface UpdateBookInput {
   genre?: string[] | null;
   status?: BookStatus;
   is_published?: boolean;
+  is_featured?: boolean;
 }
 
 export async function updateBook(

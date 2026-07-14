@@ -38,6 +38,12 @@ export function AccountMenu() {
       <div className="truncate px-3 py-1.5 font-mono text-xs text-ink-muted sm:hidden">
         {user.email}
       </div>
+      <Link
+        to="/tai-khoan"
+        className="block rounded-md px-3 py-1.5 text-sm text-ink transition-colors hover:bg-canvas"
+      >
+        Tài khoản
+      </Link>
       {role === 'admin' && (
         <>
           <Link
@@ -51,6 +57,18 @@ export function AccountMenu() {
             className="block rounded-md px-3 py-1.5 text-sm text-ink transition-colors hover:bg-canvas"
           >
             Quản lý truyện
+          </Link>
+          <Link
+            to="/admin/analytics"
+            className="block rounded-md px-3 py-1.5 text-sm text-ink transition-colors hover:bg-canvas"
+          >
+            Thống kê
+          </Link>
+          <Link
+            to="/admin/announcements"
+            className="block rounded-md px-3 py-1.5 text-sm text-ink transition-colors hover:bg-canvas"
+          >
+            Thông báo
           </Link>
           <div className="my-1 border-t border-hairline" />
         </>

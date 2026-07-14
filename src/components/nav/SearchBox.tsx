@@ -1,53 +1,41 @@
-import { useEffect, useRef, useState, type FormEvent } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
 import { IconButton } from '@/components/ui/IconButton';
-import { SearchIcon, CloseIcon } from '@/components/ui/icons';
+import { SearchIcon } from '@/components/ui/icons';
+import { SearchCommand } from './SearchCommand';
 
+/**
+ * Nút mở bảng lệnh tìm kiếm. Phím tắt toàn cục: `/` hoặc Ctrl/⌘+K
+ * (bỏ qua khi đang gõ trong input/textarea).
+ */
 export function SearchBox() {
-  const navigate = useNavigate();
   const [open, setOpen] = useState(false);
-  const [value, setValue] = useState('');
-  const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (open) inputRef.current?.focus();
-  }, [open]);
+    const onKey = (e: KeyboardEvent) => {
+      const el = e.target as HTMLElement;
+      const typing =
+        el.tagName === 'INPUT' ||
+        el.tagName === 'TEXTAREA' ||
+        el.isContentEditable;
 
-  function onSubmit(e: FormEvent) {
-    e.preventDefault();
-    const q = value.trim();
-    navigate(q ? `/?q=${encodeURIComponent(q)}` : '/');
-    setOpen(false);
-  }
-
-  if (!open) {
-    return (
-      <IconButton label="Tìm truyện" onClick={() => setOpen(true)}>
-        <SearchIcon width={18} height={18} />
-      </IconButton>
-    );
-  }
+      if ((e.key === 'k' || e.key === 'K') && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault();
+        setOpen(true);
+      } else if (e.key === '/' && !typing && !e.metaKey && !e.ctrlKey) {
+        e.preventDefault();
+        setOpen(true);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
 
   return (
-    <form onSubmit={onSubmit} className="flex items-center gap-1">
-      <input
-        ref={inputRef}
-        type="search"
-        value={value}
-        onChange={(e) => setValue(e.target.value)}
-        placeholder="Tìm truyện, tác giả…"
-        className="w-32 rounded-md border border-hairline bg-canvas px-2.5 py-1.5 text-sm text-ink outline-none transition-colors focus:border-ink sm:w-48"
-      />
-      <IconButton
-        label="Đóng tìm kiếm"
-        type="button"
-        onClick={() => {
-          setValue('');
-          setOpen(false);
-        }}
-      >
-        <CloseIcon width={16} height={16} />
+    <>
+      <IconButton label="Tìm truyện (phím /)" onClick={() => setOpen(true)}>
+        <SearchIcon width={18} height={18} />
       </IconButton>
-    </form>
+      {open && <SearchCommand onClose={() => setOpen(false)} />}
+    </>
   );
 }

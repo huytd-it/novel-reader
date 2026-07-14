@@ -138,7 +138,14 @@ export default function Auth() {
         </div>
 
         <p className="mt-5 text-center text-xs text-ink-muted">
-          Bằng việc đăng nhập, bạn đồng ý với điều khoản sử dụng.
+          Bằng việc đăng nhập, bạn đồng ý với{' '}
+          <Link
+            to="/dieu-khoan"
+            className="text-ink underline underline-offset-2"
+          >
+            điều khoản sử dụng
+          </Link>
+          .
         </p>
       </div>
     </div>
