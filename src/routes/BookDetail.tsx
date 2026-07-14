@@ -137,7 +137,7 @@ export default function BookDetail() {
       <Reveal>
         <div className="mb-14 flex flex-col gap-8 sm:flex-row">
           <div className="mx-auto w-44 shrink-0 sm:mx-0">
-            <div className="card-lift aspect-[3/4] overflow-hidden rounded-xl border border-hairline bg-white">
+            <div className="card-lift aspect-[3/4] overflow-hidden rounded-xl border border-hairline bg-surface">
               {book.cover_url ? (
                 <img
                   src={book.cover_url}
@@ -245,7 +245,7 @@ export default function BookDetail() {
               <li key={c.id} className="border-b border-hairline">
                 <Link
                   to={`/doc/${book.slug}/${c.index}`}
-                  className="flex items-center gap-4 py-3.5 transition-colors duration-150 hover:bg-white"
+                  className="flex items-center gap-4 py-3.5 transition-colors duration-150 hover:bg-surface"
                 >
                   <span className="w-8 shrink-0 font-mono text-xs tabular-nums text-ink-muted">
                     {c.index.toString().padStart(2, '0')}

@@ -140,7 +140,7 @@ function ReadsPerBookSection({ days }: { days: number }) {
         </p>
       )}
       {data && data.length > 0 && (
-        <div className="overflow-x-auto rounded-xl border border-hairline bg-white">
+        <div className="overflow-x-auto rounded-xl border border-hairline bg-surface">
           <table className="w-full min-w-[420px] text-left text-sm">
             <thead>
               <tr className="border-b border-hairline text-xs uppercase tracking-[0.06em] text-ink-muted">
@@ -206,7 +206,7 @@ function FlaggedSection() {
         </p>
       )}
       {data && data.length > 0 && (
-        <div className="overflow-x-auto rounded-xl border border-hairline bg-white">
+        <div className="overflow-x-auto rounded-xl border border-hairline bg-surface">
           <table className="w-full min-w-[420px] text-left text-sm">
             <thead>
               <tr className="border-b border-hairline text-xs uppercase tracking-[0.06em] text-ink-muted">

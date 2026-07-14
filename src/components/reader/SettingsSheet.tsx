@@ -2,13 +2,20 @@ import { useEffect } from 'react';
 import {
   useReaderSettings,
   FONT_SIZES,
+  FONT_STACKS,
   type Theme,
   type FontChoice,
 } from '@/stores/readerSettings';
 import { IconButton } from '@/components/ui/IconButton';
 import { CloseIcon, MinusIcon, PlusIcon, CheckIcon } from '@/components/ui/icons';
 
+// 'auto' theo hệ điều hành → swatch nửa sáng nửa tối.
 const THEMES: { id: Theme; label: string; swatch: string }[] = [
+  {
+    id: 'auto',
+    label: 'Tự động',
+    swatch: 'linear-gradient(135deg, #FAF9F7 0 50%, #16181A 50% 100%)',
+  },
   { id: 'paper', label: 'Giấy', swatch: '#FAF9F7' },
   { id: 'sepia', label: 'Sepia', swatch: '#F4ECD8' },
   { id: 'night', label: 'Đêm', swatch: '#16181A' },
@@ -17,6 +24,8 @@ const THEMES: { id: Theme; label: string; swatch: string }[] = [
 const FONTS: { id: FontChoice; label: string; sample: string }[] = [
   { id: 'serif', label: 'Serif', sample: 'Aa' },
   { id: 'sans', label: 'Sans', sample: 'Aa' },
+  { id: 'literata', label: 'Literata', sample: 'Aa' },
+  { id: 'bookery', label: 'Bookery', sample: 'Aa' },
 ];
 
 interface SettingsSheetProps {
@@ -102,7 +111,7 @@ export function SettingsSheet({ open, onClose }: SettingsSheetProps) {
         {/* Theme */}
         <section className="mb-5">
           <p className="mb-2 text-sm text-muted">Nền</p>
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-2 gap-2">
             {THEMES.map((t) => (
               <button
                 key={t.id}
@@ -114,7 +123,7 @@ export function SettingsSheet({ open, onClose }: SettingsSheetProps) {
               >
                 <span
                   className="h-5 w-5 rounded-full border border-border"
-                  style={{ backgroundColor: t.swatch }}
+                  style={{ background: t.swatch }}
                 />
                 {t.label}
               </button>
@@ -137,12 +146,7 @@ export function SettingsSheet({ open, onClose }: SettingsSheetProps) {
               >
                 <span
                   className="text-lg"
-                  style={{
-                    fontFamily:
-                      f.id === 'serif'
-                        ? "'Noto Serif', serif"
-                        : "'Be Vietnam Pro', sans-serif",
-                  }}
+                  style={{ fontFamily: FONT_STACKS[f.id] }}
                 >
                   {f.sample}
                 </span>

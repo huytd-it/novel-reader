@@ -121,7 +121,7 @@ function EditWorkspace({ id }: { id: string }) {
         <p className="mt-1 font-mono text-xs text-ink-muted">/truyen/{book.slug}</p>
       </header>
 
-      <section className="flex flex-col gap-4 rounded-xl border border-hairline bg-white p-6">
+      <section className="flex flex-col gap-4 rounded-xl border border-hairline bg-surface p-6">
         <Field label="Tựa">
           <input
             value={title}

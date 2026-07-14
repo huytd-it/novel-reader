@@ -47,7 +47,7 @@ export function NavPopover({
       {open && (
         <div
           onClick={() => setOpen(false)}
-          className={`absolute top-full z-30 mt-2 min-w-[180px] rounded-lg border border-hairline bg-white p-1.5 shadow-lg ${
+          className={`absolute top-full z-30 mt-2 min-w-[180px] rounded-lg border border-hairline bg-surface p-1.5 shadow-lg ${
             align === 'right' ? 'right-0' : 'left-0'
           }`}
         >

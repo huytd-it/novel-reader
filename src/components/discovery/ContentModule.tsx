@@ -56,7 +56,7 @@ export function ContentModule({
 /** Skeleton giữ đúng tỉ lệ card để không gây dịch chuyển layout. */
 function SkeletonCard() {
   return (
-    <div className="overflow-hidden rounded-xl border border-hairline bg-white">
+    <div className="overflow-hidden rounded-xl border border-hairline bg-surface">
       <div className="aspect-[3/4] w-full animate-pulse bg-hairline/60" />
       <div className="flex flex-col gap-2 p-4">
         <div className="h-3.5 w-4/5 animate-pulse rounded bg-hairline/60" />

@@ -74,8 +74,8 @@ function ImportWorkspace() {
     try {
       const res = await adminImport({
         slug,
-        title: titleOverride.trim() || undefined,
-        author: authorOverride.trim() || undefined,
+        title: titleOverride.trim() || prepared.parsed.metaTitle,
+        author: authorOverride.trim() || prepared.parsed.metaAuthor || undefined,
         free,
         publish,
         parsed: prepared.parsed,
@@ -145,7 +145,7 @@ function ImportWorkspace() {
       {prepared && !parsing && (
         <>
           {/* ---- Metadata + cấu hình ---- */}
-          <section className="rounded-xl border border-hairline bg-white p-6">
+          <section className="rounded-xl border border-hairline bg-surface p-6">
             <div className="flex gap-5">
               <div className="h-40 w-28 shrink-0 overflow-hidden rounded-md border border-hairline bg-canvas">
                 {prepared.coverDataUrl ? (
@@ -300,7 +300,7 @@ function ChapterPreview({
     <details
       open={open}
       onToggle={(e) => setOpen((e.target as HTMLDetailsElement).open)}
-      className="rounded-lg border border-hairline bg-white p-4"
+      className="rounded-lg border border-hairline bg-surface p-4"
     >
       <summary className="cursor-pointer list-none">
         <span className="font-mono text-xs uppercase tracking-wide text-ink-muted">

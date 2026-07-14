@@ -48,7 +48,7 @@ function ShelfCard({ item }: { item: ShelfItem }) {
   return (
     <Link
       to={`/doc/${book.slug}/${chapterIndex}`}
-      className="card-lift w-36 shrink-0 overflow-hidden rounded-xl border border-hairline bg-white"
+      className="card-lift w-36 shrink-0 overflow-hidden rounded-xl border border-hairline bg-surface"
     >
       <div className="aspect-[3/4] w-full overflow-hidden bg-canvas">
         {book.cover_url ? (

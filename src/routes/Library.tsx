@@ -398,7 +398,7 @@ function FacetSelect({
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="rounded-md border border-hairline bg-white px-2.5 py-1.5 text-xs text-ink outline-none transition-colors focus:border-ink"
+        className="rounded-md border border-hairline bg-surface px-2.5 py-1.5 text-xs text-ink outline-none transition-colors focus:border-ink"
       >
         {options.map((o) => (
           <option key={o.value} value={o.value}>

@@ -149,14 +149,14 @@ function ReviewForm({
 
   if (!canReview && !existing) {
     return (
-      <p className="mb-8 rounded-lg border border-hairline bg-white px-4 py-3 text-sm text-ink-muted">
+      <p className="mb-8 rounded-lg border border-hairline bg-surface px-4 py-3 text-sm text-ink-muted">
         Cần đọc ít nhất 3 chương để đánh giá truyện này.
       </p>
     );
   }
 
   return (
-    <div className="mb-10 rounded-xl border border-hairline bg-white p-5">
+    <div className="mb-10 rounded-xl border border-hairline bg-surface p-5">
       <p className="mb-3 text-sm font-medium text-ink-strong">
         {existing ? 'Đánh giá của bạn' : 'Viết đánh giá'}
       </p>

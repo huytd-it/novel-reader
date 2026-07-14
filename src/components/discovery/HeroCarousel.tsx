@@ -27,7 +27,7 @@ export function HeroCarousel() {
             key={book.id}
             to={`/truyen/${book.slug}`}
             role="listitem"
-            className="card-lift group relative flex h-44 w-[min(85vw,32rem)] shrink-0 snap-start overflow-hidden rounded-2xl border border-hairline bg-white"
+            className="card-lift group relative flex h-44 w-[min(85vw,32rem)] shrink-0 snap-start overflow-hidden rounded-2xl border border-hairline bg-surface"
           >
             <div className="w-28 shrink-0 overflow-hidden bg-canvas sm:w-32">
               {book.cover_url ? (

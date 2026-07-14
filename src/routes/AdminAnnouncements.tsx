@@ -72,7 +72,7 @@ function Workspace() {
       </header>
 
       <form
-        className="flex flex-col gap-3 rounded-xl border border-hairline bg-white p-6"
+        className="flex flex-col gap-3 rounded-xl border border-hairline bg-surface p-6"
         onSubmit={(e) => {
           e.preventDefault();
           if (message.trim()) create.mutate();
@@ -112,7 +112,7 @@ function Workspace() {
         <p className="py-6 text-sm text-ink-muted">Chưa có thông báo nào.</p>
       )}
       {data && data.length > 0 && (
-        <ul className="overflow-hidden rounded-xl border border-hairline bg-white">
+        <ul className="overflow-hidden rounded-xl border border-hairline bg-surface">
           {data.map((a) => (
             <li
               key={a.id}

@@ -1,13 +1,27 @@
 /* ------------------------------------------------------------------
    Theming + reader typography — điều khiển hoàn toàn bằng CSS variables.
-   3 theme (paper / sepia / night) đặt trên [data-theme] ở <html>.
+   Theme (paper / sepia / night) đặt trên [data-theme] ở <html>; 'auto'
+   được JS quy đổi → paper | night theo prefers-color-scheme.
+   Nền chrome (editorial) đổi tối theo [data-theme='night'].
    ------------------------------------------------------------------ */
+
+/* Bookery — font đọc self-host. Thả file vào public/fonts/ (xem README ở đó);
+   tới khi có file, FONT_STACKS tự fallback sang serif nên không vỡ layout. */
+@font-face {
+  font-family: 'Bookery';
+  src:
+    url('/fonts/Bookerly.woff') format('woff'),
+    url('/fonts/Bookerly.ttf') format('truetype');
+  font-weight: 400 500;
+  font-style: normal;
+  font-display: swap;
+}
 
 :root {
   /* Fonts (map vào tailwind.config.js) */
   --font-serif: 'Noto Serif', 'Lora', Georgia, serif;
   --font-sans: 'Be Vietnam Pro', system-ui, sans-serif;
-  /* Font vùng đọc — JS ghi đè khi người dùng đổi (serif ↔ sans) */
+  /* Font vùng đọc — JS ghi đè khi người dùng đổi (serif/sans/literata/bookery) */
   --reader-font: var(--font-serif);
 
   /* Reader typography — mức mặc định (cỡ 3/5) */
@@ -16,6 +30,26 @@
   --reader-leading: 1.8; /* Tiếng Việt cần thoáng: dấu chồng tầng */
   --reader-para-gap: 1.1em;
   --reader-indent: 0; /* dùng khoảng cách đoạn, không thụt đầu dòng */
+
+  /* ---- Editorial palette (browse/chrome) — mặc định sáng ----
+     Trước đây hardcode hex trong tailwind.config.js; giờ là biến để
+     [data-theme='night'] đổi tối được. Component vẫn dùng token cũ
+     (bg-canvas, text-ink, border-hairline, …) — không phải sửa. */
+  --canvas: #fbfbfa;
+  --ink: #2f3437;
+  --ink-strong: #1a1a18;
+  --ink-muted: #787774;
+  --hairline: #eaeaea;
+
+  --pale-red: #fdebec;
+  --pale-blue: #e1f3fe;
+  --pale-green: #edf3ec;
+  --pale-yellow: #fbf3db;
+
+  --clay-red: #9f2f2d;
+  --clay-blue: #1f6c9f;
+  --clay-green: #346538;
+  --clay-yellow: #956400;
 }
 
 /* ---- Paper (mặc định) ---- */
@@ -39,7 +73,9 @@
 }
 
 /* ---- Night ----
-   Text = #C9C7C2 (không #FFF): trắng tinh trên nền đen gây quầng mắt. */
+   Text = #C9C7C2 (không #FFF): trắng tinh trên nền đen gây quầng mắt.
+   'auto' + hệ điều hành tối → JS đặt data-theme='night', nên nền chrome
+   (editorial) cũng đổi tối theo khối này. */
 [data-theme='night'] {
   --bg: #16181a;
   --text: #c9c7c2;
@@ -47,4 +83,22 @@
   --surface: #202325;
   --border: #2c2f31;
   --accent: #c79a6a;
+
+  /* Editorial palette — biến thể tối */
+  --canvas: #16181a;
+  --ink: #c9c7c2;
+  --ink-strong: #e8e6e1;
+  --ink-muted: #8c8a85;
+  --hairline: #2c2f31;
+
+  /* Nền badge tối hơn để chữ clay-* sáng đọc được */
+  --pale-red: #3a2121;
+  --pale-blue: #16303d;
+  --pale-green: #1b2a1d;
+  --pale-yellow: #332b14;
+
+  --clay-red: #e98b87;
+  --clay-blue: #7cc0ee;
+  --clay-green: #85c489;
+  --clay-yellow: #d9a94a;
 }

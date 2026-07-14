@@ -37,7 +37,7 @@ export function ConfirmDialog({
         aria-label="Đóng"
         onClick={onClose}
       />
-      <div className="absolute inset-x-0 bottom-0 rounded-t-2xl border-t border-hairline bg-white p-5 shadow-xl sm:inset-x-auto sm:bottom-auto sm:left-1/2 sm:top-1/2 sm:w-[360px] sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-2xl">
+      <div className="absolute inset-x-0 bottom-0 rounded-t-2xl border-t border-hairline bg-surface p-5 shadow-xl sm:inset-x-auto sm:bottom-auto sm:left-1/2 sm:top-1/2 sm:w-[360px] sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-2xl">
         <h2 className="font-display text-base font-medium text-ink-strong">{title}</h2>
         <p className="mt-2 text-sm text-ink-muted">{body}</p>
         <div className="mt-5 flex justify-end gap-3">

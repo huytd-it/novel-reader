@@ -27,6 +27,15 @@ function SettingsApplier() {
     applySettingsToDOM({ theme, sizeLevel, font });
   }, [theme, sizeLevel, font]);
 
+  // Khi theme = 'auto', theo dõi hệ điều hành đổi sáng/tối để áp lại ngay.
+  useEffect(() => {
+    if (theme !== 'auto') return;
+    const mq = window.matchMedia('(prefers-color-scheme: dark)');
+    const onChange = () => applySettingsToDOM({ theme, sizeLevel, font });
+    mq.addEventListener('change', onChange);
+    return () => mq.removeEventListener('change', onChange);
+  }, [theme, sizeLevel, font]);
+
   return null;
 }
 

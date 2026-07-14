@@ -69,7 +69,7 @@ export default function Auth() {
           Đọc Truyện
         </Link>
 
-        <div className="rounded-xl border border-hairline bg-white p-7">
+        <div className="rounded-xl border border-hairline bg-surface p-7">
           <h1 className="mb-1 font-display text-2xl font-medium tracking-[-0.02em] text-ink-strong">
             Đăng nhập
           </h1>

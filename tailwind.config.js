@@ -15,23 +15,23 @@ export default {
         accent: 'var(--accent)',
 
         // ---- Editorial palette (browse/chrome surfaces) ----
-        // Fixed warm-monochrome tokens, độc lập với data-theme của reader.
-        canvas: '#FBFBFA',
-        ink: '#2F3437',
-        'ink-strong': '#1A1A18',
-        'ink-muted': '#787774',
-        hairline: '#EAEAEA',
+        // Map lên CSS vars trong themes.css để đổi tối theo [data-theme='night'].
+        canvas: 'var(--canvas)',
+        ink: 'var(--ink)',
+        'ink-strong': 'var(--ink-strong)',
+        'ink-muted': 'var(--ink-muted)',
+        hairline: 'var(--hairline)',
         pale: {
-          red: '#FDEBEC',
-          blue: '#E1F3FE',
-          green: '#EDF3EC',
-          yellow: '#FBF3DB',
+          red: 'var(--pale-red)',
+          blue: 'var(--pale-blue)',
+          green: 'var(--pale-green)',
+          yellow: 'var(--pale-yellow)',
         },
         clay: {
-          red: '#9F2F2D',
-          blue: '#1F6C9F',
-          green: '#346538',
-          yellow: '#956400',
+          red: 'var(--clay-red)',
+          blue: 'var(--clay-blue)',
+          green: 'var(--clay-green)',
+          yellow: 'var(--clay-yellow)',
         },
       },
       fontFamily: {

@@ -70,7 +70,7 @@ export function SearchCommand({ onClose }: { onClose: () => void }) {
         aria-label="Đóng"
         onClick={onClose}
       />
-      <div className="relative w-full max-w-lg overflow-hidden rounded-xl border border-hairline bg-white shadow-xl">
+      <div className="relative w-full max-w-lg overflow-hidden rounded-xl border border-hairline bg-surface shadow-xl">
         <form
           onSubmit={(e) => {
             e.preventDefault();

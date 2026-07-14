@@ -83,7 +83,7 @@ function Gate({
   action?: React.ReactNode;
 }) {
   return (
-    <div className="rounded-xl border border-hairline bg-white p-8 text-center">
+    <div className="rounded-xl border border-hairline bg-surface p-8 text-center">
       <h1 className="font-display text-2xl font-medium tracking-[-0.02em] text-ink-strong">
         {title}
       </h1>

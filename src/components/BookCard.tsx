@@ -6,7 +6,7 @@ export function BookCard({ book }: { book: Book }) {
   return (
     <Link
       to={`/truyen/${book.slug}`}
-      className="card-lift group flex h-full flex-col overflow-hidden rounded-xl border border-hairline bg-white"
+      className="card-lift group flex h-full flex-col overflow-hidden rounded-xl border border-hairline bg-surface"
     >
       <div className="aspect-[3/4] w-full overflow-hidden bg-canvas">
         {book.cover_url ? (

@@ -121,7 +121,7 @@ function ProfileSection({ userId, email }: { userId: string; email: string }) {
             maxLength={80}
             onChange={(e) => setName(e.target.value)}
             placeholder="Tên của bạn"
-            className="rounded-md border border-hairline bg-white px-3 py-2.5 text-sm text-ink outline-none transition-colors focus:border-ink"
+            className="rounded-md border border-hairline bg-surface px-3 py-2.5 text-sm text-ink outline-none transition-colors focus:border-ink"
           />
           <p className="font-mono text-xs text-ink-muted">{email}</p>
           <div className="flex items-center gap-3">
@@ -188,9 +188,9 @@ function BookshelfSection({ userId }: { userId: string }) {
             <li key={e.book_id} className="border-b border-hairline">
               <Link
                 to={`/truyen/${e.book!.slug}`}
-                className="flex items-center gap-4 py-3.5 transition-colors duration-150 hover:bg-white"
+                className="flex items-center gap-4 py-3.5 transition-colors duration-150 hover:bg-surface"
               >
-                <span className="h-14 w-10 shrink-0 overflow-hidden rounded border border-hairline bg-white">
+                <span className="h-14 w-10 shrink-0 overflow-hidden rounded border border-hairline bg-surface">
                   {e.book!.cover_url ? (
                     <img
                       src={e.book!.cover_url}
@@ -259,9 +259,9 @@ function ShelfRow({ item }: { item: ShelfItem }) {
     <li className="border-b border-hairline">
       <Link
         to={`/doc/${book.slug}/${chapterIndex}`}
-        className="flex items-center gap-4 py-3.5 transition-colors duration-150 hover:bg-white"
+        className="flex items-center gap-4 py-3.5 transition-colors duration-150 hover:bg-surface"
       >
-        <span className="h-14 w-10 shrink-0 overflow-hidden rounded border border-hairline bg-white">
+        <span className="h-14 w-10 shrink-0 overflow-hidden rounded border border-hairline bg-surface">
           {book.cover_url ? (
             <img
               src={book.cover_url}
@@ -388,7 +388,7 @@ function BookmarkRow({
             autoFocus
             onChange={(e) => setNote(e.target.value)}
             placeholder="Ghi chú…"
-            className="flex-1 rounded-md border border-hairline bg-white px-3 py-1.5 text-sm text-ink outline-none transition-colors focus:border-ink"
+            className="flex-1 rounded-md border border-hairline bg-surface px-3 py-1.5 text-sm text-ink outline-none transition-colors focus:border-ink"
           />
           <Button type="submit" variant="hairline" disabled={saveNote.isPending}>
             Lưu

@@ -57,7 +57,7 @@ export function RankingWidget() {
           <li key={b.id}>
             <Link
               to={`/truyen/${b.slug}`}
-              className="flex items-center gap-3 rounded-lg py-2 transition-colors hover:bg-white"
+              className="flex items-center gap-3 rounded-lg py-2 transition-colors hover:bg-surface"
             >
               <span
                 className={`w-6 shrink-0 text-center font-display text-lg tabular-nums ${
