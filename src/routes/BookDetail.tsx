@@ -7,7 +7,7 @@ import { SiteHeader } from '@/components/SiteHeader';
 import { Reveal } from '@/components/ui/Reveal';
 import { Spinner } from '@/components/ui/Spinner';
 import { Button } from '@/components/ui/Button';
-import { LockIcon } from '@/components/ui/icons';
+import { CheckIcon, LockIcon } from '@/components/ui/icons';
 
 // Xoay vòng pastel cho tag thể loại để tạo nhịp màu nhẹ.
 const GENRE_TONES = [
@@ -70,6 +70,8 @@ export default function BookDetail() {
   const resumeChapter = progress
     ? chapters.find((c) => c.id === progress.chapter_id)
     : undefined;
+  // Truyện chữ đọc tuyến tính: chương trước vị trí hiện tại coi là đã đọc.
+  const currentIndex = resumeChapter?.index;
 
   return (
     <Shell>
@@ -167,7 +169,11 @@ export default function BookDetail() {
         {chaptersQuery.isLoading && <Spinner label="Đang tải mục lục…" />}
         {chapters.length > 0 && (
           <ul>
-            {chapters.map((c) => (
+            {chapters.map((c) => {
+              const isRead =
+                currentIndex !== undefined && c.index < currentIndex;
+              const isCurrent = c.index === currentIndex;
+              return (
               <li key={c.id} className="border-b border-hairline">
                 <Link
                   to={`/doc/${book.slug}/${c.index}`}
@@ -176,7 +182,24 @@ export default function BookDetail() {
                   <span className="w-8 shrink-0 font-mono text-xs tabular-nums text-ink-muted">
                     {c.index.toString().padStart(2, '0')}
                   </span>
-                  <span className="flex-1 text-sm text-ink">{c.title}</span>
+                  <span
+                    className={`flex-1 text-sm ${isRead ? 'text-ink-muted' : 'text-ink'}`}
+                  >
+                    {c.title}
+                  </span>
+                  {isRead && (
+                    <CheckIcon
+                      className="shrink-0 text-ink-muted"
+                      width={15}
+                      height={15}
+                      aria-label="Đã đọc"
+                    />
+                  )}
+                  {isCurrent && (
+                    <span className="rounded-full bg-pale-blue px-2 py-0.5 text-[10px] uppercase tracking-[0.05em] text-clay-blue">
+                      Đang đọc
+                    </span>
+                  )}
                   {c.is_free ? (
                     <span className="rounded-full bg-pale-green px-2 py-0.5 text-[10px] uppercase tracking-[0.05em] text-clay-green">
                       Miễn phí
@@ -190,7 +213,8 @@ export default function BookDetail() {
                   )}
                 </Link>
               </li>
-            ))}
+              );
+            })}
           </ul>
         )}
       </section>
