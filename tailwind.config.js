@@ -20,6 +20,7 @@ export default {
         ink: 'var(--ink)',
         'ink-strong': 'var(--ink-strong)',
         'ink-muted': 'var(--ink-muted)',
+        'ink-invert': 'var(--ink-invert)',
         hairline: 'var(--hairline)',
         pale: {
           red: 'var(--pale-red)',

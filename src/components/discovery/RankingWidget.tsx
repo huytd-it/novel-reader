@@ -42,7 +42,7 @@ export function RankingWidget() {
               aria-pressed={days === p.days}
               className={`rounded-full px-3 py-1 text-xs uppercase tracking-[0.05em] transition-colors duration-150 ${
                 days === p.days
-                  ? 'bg-ink-strong text-white'
+                  ? 'bg-ink-invert text-white'
                   : 'text-ink-muted hover:text-ink'
               }`}
             >
@@ -52,12 +52,12 @@ export function RankingWidget() {
         </div>
       </div>
 
-      <ol className="grid gap-x-8 gap-y-1 sm:grid-cols-2">
+      <ol className="grid grid-cols-1 gap-y-1 sm:grid-cols-2 sm:gap-x-8">
         {(data ?? []).map((b, i) => (
           <li key={b.id}>
             <Link
               to={`/truyen/${b.slug}`}
-              className="flex items-center gap-3 rounded-lg py-2 transition-colors hover:bg-surface"
+              className="flex w-full items-center gap-3 rounded-lg py-2 transition-colors hover:bg-surface"
             >
               <span
                 className={`w-6 shrink-0 text-center font-display text-lg tabular-nums ${

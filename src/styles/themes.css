@@ -41,6 +41,12 @@
   --ink-muted: #787774;
   --hairline: #eaeaea;
 
+  /* Nền solid cố định cho nút/badge dùng text-white (vd. Button variant
+     'solid', chip đang chọn). KHÔNG đổi theo [data-theme='night'] — khác
+     với --ink-strong (đổi tối để làm màu chữ), vì ở đây cần nền luôn tối
+     để chữ trắng còn đọc được. */
+  --ink-invert: #1a1a18;
+
   --pale-red: #fdebec;
   --pale-blue: #e1f3fe;
   --pale-green: #edf3ec;

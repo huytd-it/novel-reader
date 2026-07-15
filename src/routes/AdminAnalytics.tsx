@@ -45,7 +45,7 @@ function AnalyticsWorkspace() {
               aria-pressed={days === d}
               className={`rounded-full border px-3.5 py-1.5 text-xs uppercase tracking-[0.05em] transition-colors duration-150 ${
                 days === d
-                  ? 'border-ink-strong bg-ink-strong text-white'
+                  ? 'border-ink-invert bg-ink-invert text-white'
                   : 'border-hairline text-ink-muted hover:text-ink'
               }`}
             >

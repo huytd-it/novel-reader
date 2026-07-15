@@ -33,7 +33,10 @@ export function ContinueReading() {
           Xem tất cả
         </Link>
       </div>
-      <div className="-mx-1 flex gap-4 overflow-x-auto px-1 pb-2">
+      <div
+        className="-mx-1 flex gap-4 overflow-x-auto px-1 pb-2"
+        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+      >
         {shelf.slice(0, 10).map((item) => (
           <ShelfCard key={item.book_id} item={item} />
         ))}

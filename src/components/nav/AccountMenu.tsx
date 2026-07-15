@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/lib/auth';
 import { fetchMyRole } from '@/lib/api';
+import { fetchMyProfile } from '@/lib/profile';
 import { Button } from '@/components/ui/Button';
 import { UserIcon } from '@/components/ui/icons';
 import { NavPopover } from './NavPopover';
@@ -9,12 +10,19 @@ import { NavPopover } from './NavPopover';
 export function AccountMenu() {
   const { user, signOut } = useAuth();
 
-  // Cùng queryKey với AdminGate → react-query cache dùng chung.
   const { data: role } = useQuery({
     queryKey: ['my-role', user?.id],
     queryFn: () => fetchMyRole(user!.id),
     enabled: !!user,
   });
+
+  const { data: profile } = useQuery({
+    queryKey: ['my-profile', user?.id],
+    queryFn: () => fetchMyProfile(user!.id),
+    enabled: !!user,
+  });
+
+  const displayName = profile?.display_name || user?.email;
 
   if (!user) {
     return (
@@ -30,13 +38,13 @@ export function AccountMenu() {
       triggerClassName="inline-flex items-center gap-1.5 text-ink-muted transition-colors hover:text-ink"
       trigger={() => (
         <>
-          <span className="hidden font-mono text-xs sm:inline">{user.email}</span>
+          <span className="hidden font-mono text-xs sm:inline">{displayName}</span>
           <UserIcon width={20} height={20} className="sm:hidden" />
         </>
       )}
     >
       <div className="truncate px-3 py-1.5 font-mono text-xs text-ink-muted sm:hidden">
-        {user.email}
+        {displayName}
       </div>
       <Link
         to="/tai-khoan"

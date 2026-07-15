@@ -15,7 +15,7 @@ const variants: Record<Variant, string> = {
   primary: 'rounded-lg bg-accent text-[var(--bg)] hover:opacity-90',
   ghost: 'rounded-lg text-text hover:bg-surface',
   outline: 'rounded-lg border border-border text-text hover:bg-surface',
-  solid: 'rounded-md bg-ink-strong text-white hover:bg-[#333333] active:scale-[0.98]',
+  solid: 'rounded-md bg-ink-invert text-white hover:bg-[#333333] active:scale-[0.98]',
   hairline:
     'rounded-md border border-hairline text-ink hover:bg-canvas active:scale-[0.98]',
 };
