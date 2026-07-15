@@ -191,7 +191,7 @@ function StatusBadge({
 }) {
   return (
     <span
-      className={`w-fit rounded-full px-2 py-0.5 text-[10px] uppercase tracking-[0.05em] ${
+      className={`w-fit whitespace-nowrap rounded-full px-2 py-0.5 text-[10px] uppercase tracking-[0.05em] ${
         active ? 'bg-pale-green text-clay-green' : 'bg-pale-yellow text-clay-yellow'
       }`}
     >

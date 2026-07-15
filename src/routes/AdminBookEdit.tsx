@@ -172,15 +172,20 @@ function EditWorkspace({ id }: { id: string }) {
             </select>
           </Field>
 
-          <label className="flex items-center gap-2 self-end pb-2 text-sm text-ink">
-            <input
-              type="checkbox"
-              checked={isPublished}
-              onChange={(e) => setIsPublished(e.target.checked)}
-              className="h-4 w-4 accent-ink-strong"
-            />
-            Publish (hiển thị công khai)
-          </label>
+          <div className="flex flex-col gap-1">
+            <span className="text-xs font-medium uppercase tracking-wide text-ink-muted">
+              Hiển thị
+            </span>
+            <label className="flex items-center gap-2 py-2 text-sm text-ink">
+              <input
+                type="checkbox"
+                checked={isPublished}
+                onChange={(e) => setIsPublished(e.target.checked)}
+                className="h-4 w-4 accent-ink-strong"
+              />
+              Publish (hiển thị công khai)
+            </label>
+          </div>
         </div>
 
         <label className="flex items-center gap-2 text-sm text-ink">
