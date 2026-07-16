@@ -1,0 +1,16 @@
+{
+  "name": "Novel Reader",
+  "short_name": "NovelReader",
+  "description": "Đọc truyện chữ tiếng Việt — đơn giản, nhẹ, mượt.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FAF9F7",
+  "theme_color": "#FAF9F7",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}
