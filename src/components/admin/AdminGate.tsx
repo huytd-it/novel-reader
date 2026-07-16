@@ -66,7 +66,7 @@ function Shell({ wide, children }: { wide: boolean; children: React.ReactNode })
   return (
     <div className="min-h-dvh bg-canvas text-ink">
       <SiteHeader />
-      <main className={`mx-auto px-6 py-14 ${wide ? 'max-w-5xl' : 'max-w-3xl'}`}>
+      <main className={`mx-auto px-6 py-14 ${wide ? 'max-w-5xl' : 'max-w-5xl'}`}>
         {children}
       </main>
     </div>

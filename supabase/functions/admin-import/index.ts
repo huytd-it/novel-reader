@@ -2,8 +2,10 @@
 // Nhập một truyện (EPUB đã parse ở client) vào DB bằng service role.
 // Chỉ user có profiles.role = 'admin' mới gọi được.
 //
-// Luồng: verify JWT → check admin → upload bìa → upsert book →
-//        thay toàn bộ chapters + chapter_contents → cập nhật chapter_count.
+// Luồng: verify JWT → check admin → upload bìa → tìm/tạo book →
+//        ghi chapters + chapter_contents theo index tường minh
+//        (mode replace: thay toàn bộ; mode merge: upsert theo index,
+//        giữ chương hiện có) → đếm lại chapter_count.
 //
 // Deploy: supabase functions deploy admin-import --no-verify-jwt
 //   (tự verify JWT trong code để trả JSON lỗi rõ ràng; SUPABASE_URL &
@@ -38,19 +40,28 @@ function json(body: unknown, status = 200) {
 interface InChapter {
   title: string;
   content: string;
+  // Số thứ tự tường minh (lấy từ tên chương ở client, vd "Chương 10" → 10).
+  // Thiếu thì fallback vị trí trong mảng (i + 1) — tương thích payload cũ.
+  index?: number;
 }
 interface InCover {
   base64: string;
   contentType: string;
   ext: string;
 }
+// replace = xoá toàn bộ chương cũ rồi ghi mới (import lần đầu / làm lại).
+// merge   = upsert theo (book_id, index): chương trùng số bị ghi đè (giữ
+//           nguyên id → không mất tiến độ/bookmark), chương mới thêm vào —
+//           dùng khi bổ sung chương từ nguồn khác.
+type ImportMode = 'replace' | 'merge';
 interface Payload {
   slug: string;
   title?: string;
   author?: string;
   free: number;
   publish: boolean;
-  chapters: InChapter[];
+  mode: ImportMode;
+  chapters: Array<Required<InChapter>>;
   cover?: InCover | null;
 }
 
@@ -84,13 +95,25 @@ function parsePayload(body: unknown): { data?: Payload; error?: string } {
   if (!Array.isArray(b.chapters) || b.chapters.length === 0) {
     return { error: 'no_chapters' };
   }
-  const chapters: InChapter[] = [];
-  for (const c of b.chapters) {
-    const title = String((c as InChapter)?.title ?? '').trim();
-    const content = String((c as InChapter)?.content ?? '');
+  const chapters: Array<Required<InChapter>> = [];
+  const usedIndexes = new Set<number>();
+  for (let i = 0; i < b.chapters.length; i++) {
+    const c = b.chapters[i] as InChapter;
+    const title = String(c?.title ?? '').trim();
+    const content = String(c?.content ?? '');
     if (!title || !content.trim()) return { error: 'empty_chapter' };
-    chapters.push({ title, content });
+
+    const index = c?.index === undefined ? i + 1 : Number(c.index);
+    if (!Number.isSafeInteger(index) || index < 1) {
+      return { error: 'invalid_index' };
+    }
+    if (usedIndexes.has(index)) return { error: 'duplicate_index' };
+    usedIndexes.add(index);
+
+    chapters.push({ title, content, index });
   }
+
+  const mode: ImportMode = b.mode === 'merge' ? 'merge' : 'replace';
 
   const free = Number(b.free ?? 0);
   if (!Number.isFinite(free) || free < 0) return { error: 'invalid_free' };
@@ -111,6 +134,7 @@ function parsePayload(body: unknown): { data?: Payload; error?: string } {
       author: b.author ? String(b.author) : undefined,
       free,
       publish: b.publish === true,
+      mode,
       chapters,
       cover,
     },
@@ -187,68 +211,104 @@ Deno.serve(async (req) => {
     coverUrl = await uploadCover(payload.slug, payload.cover);
   }
 
-  // ---- 5. Upsert book ----
-  const bookRow: Record<string, unknown> = {
-    slug: payload.slug,
-    title: title || payload.slug,
-    author,
-    is_published: payload.publish,
-    chapter_count: payload.chapters.length,
-  };
-  if (coverUrl) bookRow.cover_url = coverUrl;
-
-  const { data: book, error: bookErr } = await admin
+  // ---- 5. Tìm/tạo book ----
+  // merge vào book đã có: KHÔNG ghi đè metadata/is_published (chỉ bổ sung
+  // chương từ nguồn khác); chỉ cập nhật cover nếu upload mới thành công.
+  const { data: existing } = await admin
     .from('books')
-    .upsert(bookRow, { onConflict: 'slug' })
-    .select('id')
-    .single();
-  if (bookErr || !book) {
-    console.error('upsert book:', bookErr?.message);
-    return json({ error: 'db_book', detail: bookErr?.message }, 500);
+    .select('id, is_published')
+    .eq('slug', payload.slug)
+    .maybeSingle();
+
+  let bookId: string;
+  let published: boolean;
+  if (existing && payload.mode === 'merge') {
+    bookId = existing.id;
+    published = existing.is_published;
+    if (coverUrl) {
+      await admin.from('books').update({ cover_url: coverUrl }).eq('id', bookId);
+    }
+  } else {
+    const bookRow: Record<string, unknown> = {
+      slug: payload.slug,
+      title: title || payload.slug,
+      author,
+      is_published: payload.publish,
+    };
+    if (coverUrl) bookRow.cover_url = coverUrl;
+
+    const { data: book, error: bookErr } = await admin
+      .from('books')
+      .upsert(bookRow, { onConflict: 'slug' })
+      .select('id')
+      .single();
+    if (bookErr || !book) {
+      console.error('upsert book:', bookErr?.message);
+      return json({ error: 'db_book', detail: bookErr?.message }, 500);
+    }
+    bookId = book.id;
+    published = payload.publish;
   }
 
-  // ---- 6. Thay toàn bộ chương (cascade xóa chapter_contents) ----
-  await admin.from('chapters').delete().eq('book_id', book.id);
+  // ---- 6. Ghi chương ----
+  // replace: xoá sạch rồi ghi mới (cascade xoá chapter_contents).
+  // merge:   upsert theo (book_id, index) — chương trùng số giữ nguyên id
+  //          (không mất tiến độ/bookmark), chỉ thay title/nội dung.
+  if (payload.mode === 'replace') {
+    await admin.from('chapters').delete().eq('book_id', bookId);
+  }
 
-  const metaRows = payload.chapters.map((ch, i) => ({
-    book_id: book.id,
-    index: i + 1,
+  const metaRows = payload.chapters.map((ch) => ({
+    book_id: bookId,
+    index: ch.index,
     title: ch.title,
-    is_free: i + 1 <= payload.free,
+    is_free: ch.index <= payload.free,
     word_count: countWords(ch.content),
   }));
 
-  // Insert metadata theo lô, lấy id để ghép nội dung.
+  // Upsert metadata theo lô, lấy id để ghép nội dung.
   const idByIndex = new Map<number, string>();
   for (const batch of chunk(metaRows, 200)) {
-    const { data: inserted, error: chErr } = await admin
+    const { data: upserted, error: chErr } = await admin
       .from('chapters')
-      .insert(batch)
+      .upsert(batch, { onConflict: 'book_id,index' })
       .select('id, index');
-    if (chErr || !inserted) {
-      console.error('insert chapters:', chErr?.message);
+    if (chErr || !upserted) {
+      console.error('upsert chapters:', chErr?.message);
       return json({ error: 'db_chapters', detail: chErr?.message }, 500);
     }
-    for (const row of inserted) idByIndex.set(row.index, row.id);
+    for (const row of upserted) idByIndex.set(row.index, row.id);
   }
 
-  const contentRows = payload.chapters.map((ch, i) => ({
-    chapter_id: idByIndex.get(i + 1)!,
+  const contentRows = payload.chapters.map((ch) => ({
+    chapter_id: idByIndex.get(ch.index)!,
     content: ch.content,
   }));
   for (const batch of chunk(contentRows, 100)) {
-    const { error: cErr } = await admin.from('chapter_contents').insert(batch);
+    const { error: cErr } = await admin
+      .from('chapter_contents')
+      .upsert(batch);
     if (cErr) {
-      console.error('insert contents:', cErr.message);
+      console.error('upsert contents:', cErr.message);
       return json({ error: 'db_contents', detail: cErr.message }, 500);
     }
   }
 
+  // ---- 7. Đếm lại chapter_count (merge có thể chỉ thêm một phần) ----
+  const { count } = await admin
+    .from('chapters')
+    .select('id', { count: 'exact', head: true })
+    .eq('book_id', bookId);
+  await admin
+    .from('books')
+    .update({ chapter_count: count ?? payload.chapters.length })
+    .eq('id', bookId);
+
   return json({
-    bookId: book.id,
+    bookId,
     slug: payload.slug,
     chapters: payload.chapters.length,
     coverUrl,
-    published: payload.publish,
+    published,
   });
 });

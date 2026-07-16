@@ -111,14 +111,23 @@ export async function fetchMyRole(userId: string): Promise<string | null> {
 }
 
 export async function fetchChapterList(bookId: string): Promise<ChapterMeta[]> {
-  const { data, error } = await supabase
-    .from('chapters')
-    .select('*')
-    .eq('book_id', bookId)
-    .order('index', { ascending: true });
+  // PostgREST mặc định cắt ở 1000 dòng/request — truyện dài phải phân trang,
+  // nếu không mục lục/"Đọc tiếp" cụt từ chương 1001.
+  const pageSize = 1000;
+  const out: ChapterMeta[] = [];
+  for (let from = 0; ; from += pageSize) {
+    const { data, error } = await supabase
+      .from('chapters')
+      .select('*')
+      .eq('book_id', bookId)
+      .order('index', { ascending: true })
+      .range(from, from + pageSize - 1);
 
-  if (error) throw new ApiError(500, error.message);
-  return data ?? [];
+    if (error) throw new ApiError(500, error.message);
+    out.push(...(data ?? []));
+    if (!data || data.length < pageSize) break;
+  }
+  return out;
 }
 
 // ---- Reader: nội dung chương chỉ qua Edge Function ----

@@ -163,16 +163,29 @@ Deno.serve(async (req) => {
 
   if (!contentRow) return json({ error: 'not_found' }, 404);
 
-  // prev/next: chỉ trả index tồn tại.
-  const { data: neighbors } = await admin
-    .from('chapters')
-    .select('index')
-    .eq('book_id', book.id)
-    .in('index', [chapterIndex - 1, chapterIndex + 1]);
+  // prev/next: index gần nhất còn tồn tại (index có thể "thủng lỗ" sau khi
+  // xoá chương rác hoặc merge từ nhiều nguồn — không chỉ ±1).
+  const [{ data: prevRow }, { data: nextRow }] = await Promise.all([
+    admin
+      .from('chapters')
+      .select('index')
+      .eq('book_id', book.id)
+      .lt('index', chapterIndex)
+      .order('index', { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+    admin
+      .from('chapters')
+      .select('index')
+      .eq('book_id', book.id)
+      .gt('index', chapterIndex)
+      .order('index', { ascending: true })
+      .limit(1)
+      .maybeSingle(),
+  ]);
 
-  const indices = new Set((neighbors ?? []).map((r) => r.index));
-  const prevIndex = indices.has(chapterIndex - 1) ? chapterIndex - 1 : null;
-  const nextIndex = indices.has(chapterIndex + 1) ? chapterIndex + 1 : null;
+  const prevIndex = prevRow?.index ?? null;
+  const nextIndex = nextRow?.index ?? null;
 
   return json({
     title: chapter.title,

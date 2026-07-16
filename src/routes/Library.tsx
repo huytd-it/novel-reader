@@ -179,7 +179,7 @@ export default function Library() {
               'radial-gradient(60% 55% at 50% 0%, rgba(149,100,0,0.05), transparent 70%)',
           }}
         />
-        <div className="relative mx-auto max-w-5xl px-6 py-24 md:py-28">
+        <div className="relative mx-auto max-w-5xl px-6 py-6 md:py-14">
           <Reveal>
             <p className="font-mono text-xs uppercase tracking-[0.18em] text-ink-muted">
               Thư viện · Truyện chữ tiếng Việt

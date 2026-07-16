@@ -23,6 +23,7 @@ import process from 'node:process';
 import { createClient } from '@supabase/supabase-js';
 import { config } from 'dotenv';
 import { parseEpubBuffer, countWords, type RawCover } from '../src/lib/epub';
+import { assignChapterIndexes } from '../src/lib/chapterNumber';
 
 config({ path: '.env.local' });
 
@@ -191,10 +192,14 @@ async function main() {
   // Xóa chương cũ của book này (ingest lại từ đầu, sạch sẽ).
   await supabase.from('chapters').delete().eq('book_id', book.id);
 
+  // Đánh số: ưu tiên số trong tên chương ("Chương 10" → 10), thiếu thì nối
+  // tiếp — khớp với luồng import trên web, nhập nhiều nguồn không lệch chương.
+  const assigned = assignChapterIndexes(chapters.map((c) => c.title));
+
   // Insert chương lần lượt.
   let done = 0;
   for (let i = 0; i < chapters.length; i++) {
-    const index = i + 1;
+    const index = assigned[i].index;
     const ch = chapters[i];
 
     const { data: chapterRow, error: chErr } = await supabase

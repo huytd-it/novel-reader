@@ -58,12 +58,29 @@ export async function prepareEpub(file: File): Promise<PreparedImport> {
   return { parsed, coverDataUrl, coverBase64 };
 }
 
+/** Một chương đã chọn + đánh số ở UI, sẵn sàng ghi DB. */
+export interface ImportChapter {
+  title: string;
+  content: string;
+  /** Số thứ tự tường minh — ưu tiên số trong tên chương ("Chương 10" → 10). */
+  index: number;
+}
+
+/**
+ * replace = thay toàn bộ chương hiện có của slug này.
+ * merge   = giữ chương hiện có, upsert theo số chương (bổ sung từ nguồn khác).
+ */
+export type ImportMode = 'replace' | 'merge';
+
 export interface AdminImportInput {
   slug: string;
   title?: string;
   author?: string;
   free: number;
   publish: boolean;
+  mode: ImportMode;
+  /** Các chương đã lọc (bỏ chương rác, cắt range) + đánh index ở UI. */
+  chapters: ImportChapter[];
   parsed: ParsedEpub;
   coverBase64: string | null;
 }
@@ -82,7 +99,8 @@ export async function adminImport(
     author: input.author,
     free: input.free,
     publish: input.publish,
-    chapters: input.parsed.chapters,
+    mode: input.mode,
+    chapters: input.chapters,
     cover:
       input.parsed.cover && input.coverBase64
         ? {
