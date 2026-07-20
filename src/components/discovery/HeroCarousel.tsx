@@ -32,7 +32,7 @@ export function HeroCarousel() {
     const track = trackRef.current;
     if (!track || !books) return;
     const card = track.children[active] as HTMLElement | undefined;
-    card?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'start' });
+    if (card) track.scrollTo({ left: card.offsetLeft, behavior: 'smooth' });
   }, [active, books]);
 
   if (!books || books.length === 0) return null;
